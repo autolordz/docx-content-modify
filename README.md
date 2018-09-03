@@ -1,3 +1,4 @@
+
 # docx-content-modify
 
 法院书记员批量生成邮单脚本程序，减轻书记员负担
@@ -9,20 +10,21 @@
 - [x] 重命名判决书(判决书来自于[中国裁判文书网](http://wenshu.court.gov.cn/))
 	- 判决书按照
 
-- [x] 批量填充判决书地址到data.xlsx
+- [x] 批量填充判决书地址到数据模板
 	- 先从***法院书记员OA系统***下载信息表,编辑data.xlsx包括字段 ['立案日期','案号','原一审案号','主审法官','当事人','诉讼代理人','地址','备注',...]
 
- 	- 再自动填充判决书中有地址的角色到data.xlsx,其他缺失的律师和地址需要***自行***填充
+ 	- 再自动填充判决书中有地址的角色到[数据模板](./demo_docs/data.xlsx),其他缺失的律师和地址需要***自行***填充
 
 - [x] 最后批量生成寄送邮单
+	- [邮单模板](./demo_docs/sheet.docx)
 	- 生成临时文件 data_temp.xlsx用于校对,是邮单信息来源 
 
 第一次运行会生成配置文件:
 
 ```python
 [config]
-data_xlsx = data.xlsx
-sheet_docx = sheet.docx
+data_xlsx = data.xlsx #数据模板
+sheet_docx = sheet.docx #邮单模板
 last_pages = 40  #生成邮单记录条数,从最后数起
 date_range = 2018-06-01:2018-08-01 #生成日期范围,last_pages不填或0时才有用
 rename_jdocs = True #是否重命名
@@ -43,7 +45,11 @@ data.xlsx 填充格式,重点是['诉讼代理人','地址']
 
 生成的邮单是没有代理人的单独一份,有代理人的几个当事人一份,法院书记员的都懂
 
-看不懂说明的可以直接下载exe版本(win10)
+看不懂说明的可以直接下载exe版本(win7/win10)
 
 THE END
 Enjoy
+
+# 版权见licence
+
+- MIT licence

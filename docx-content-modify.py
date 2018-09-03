@@ -1,12 +1,32 @@
+# Copyright (c) 2018 Autoz https://github.com/autolordz
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 # -*- coding: utf-8 -*-
 print("""
 Auto generate word:docx from excel:xslx file.
 
-Created on Wed Aug 15 11:06:04 2018
+Created on Wed Aug 15 2018
 
 Depends on: python-docx,pandas.
 
-@author: Autoz.George
+@author: Autoz 
 """)
 
 #%%
@@ -106,7 +126,7 @@ if os.path.exists(data_xlsx):
         date_end = dats[1] if dats[1] else df_orgin['datetime'].iloc[-1]
         df = df_orgin[(df_orgin['datetime']>date_start)&(df_orgin['datetime']<date_end)]
     print('读取记录成功...',df.columns.values)
-else: print('data.xlsx记录文件不存在...退出');sys.exit()
+else: input('data.xlsx记录文件不存在...任意键退出');sys.exit()
     
 #%% rename judgment docs
 def rename_doc_by_infos(file):
@@ -164,10 +184,10 @@ def fill_duplicate_adr(dfn):
     return dfn
 
 if fill_jdocs_adr:
-    print('开始填充判决书地址...')
     docs = glob(parse_subpath(jdocs_path,'判决书_*.docx'))
     if len(docs)>0:
-        print('判决书:',docs)
+        print('找到判决书:',docs)
+        print('开始填充判决书地址...')
         numlist=[]; adrlist = []
         for file in docs:
             number,address = get_pre_address(Document(file))
@@ -179,11 +199,11 @@ if fill_jdocs_adr:
             dfn = titles_trans(dfn)
             save_adjust_xlsx(dfn,data_xlsx,dfn.columns.tolist())
             #dfn.to_excel(data_xlsx,index=False)
-            print('填充地址到原文件完毕...请手动填充%s的代理人' % data_xlsx)
+            input('填充地址到原文件完毕...请手动填充%s的代理人...任意键继续' % data_xlsx)
         except PermissionError:
-            print('data.xlsx在其他地方打开...请手动关闭')
-    else: print('没有找到判决书docx,先复制判决书到jdocs目录...退出');sys.exit()
-else: print('fill_jdocs_adr = False控制不填充地址 ,继续下一步...')
+            input('data.xlsx在其他地方打开...请手动关闭...任意键继续')
+    else: input('没有找到判决书docx,可复制判决书到jdocs目录...任意键继续')
+else: print('config 选择不填充地址 ,继续下一步...')
 #%% No.
 def renamef(x,y):
     '''Clean agent name for agent to match address's agent name'''
@@ -243,7 +263,7 @@ if tmp_file and len(data):
     data.columns = titles_en
     #data.to_excel(data_tmp,index=False)
     save_adjust_xlsx(data,data_tmp,titles_en)
-else: print('生成数据失败,请检查源data.xlsx文件...');sys.exit()
+else: input('生成数据失败,请检查源data.xlsx文件...退出');sys.exit()
 
 #%% replace postal_sheet.docx
 
@@ -287,18 +307,18 @@ def re_writ_text(data):
 
     sheet_file = number_text+'_'+agent_text+'_'+user_text+'_'+address_text+'.docx'
     doc.save(parse_subpath(postal_path,sheet_file))
-    print('已生成邮单...',sheet_file)
+    print('已生成邮单 =>',sheet_file)
     return doc
 
 if to_postal:
     print('生成邮单...')
     if not os.path.exists(sheet_docx):
-        print('没有找到邮单模板%s...退出' % sheet_docx);sys.exit()
+        input('没有找到邮单模板%s...任意键退出' % sheet_docx);sys.exit()
     data.apply(lambda x:re_writ_text(x),axis = 1)
     #re_writ_text(data.iloc[1])
 
 # if __name__ == "__main__":
-input('全部完成,可以回顾记录,或者按任意键退出...')
+input('全部完成,可以回顾记录...任意键退出')
     
 
 
