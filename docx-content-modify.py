@@ -34,7 +34,7 @@ import os,re,sys,datetime,codecs,configparser
 from pandas import DataFrame, read_excel, merge, concat, set_option, to_datetime
 from docx import Document  # doc = Document('*.docx')
 from glob import glob
-from StyleFrame import StyleFrame
+from StyleFrame import StyleFrame, Styler
 
 set_option('max_colwidth',500)
 set_option('max_rows', 50)
@@ -47,15 +47,15 @@ sheet_docx = 'sheet.docx'
 postal_path = os.path.join('.','postal')
 jdocs_path = os.path.join('.','jdocs')
 OA_last_lines = 10
-data_last_lines = 5
+data_last_lines = 10
 date_range = '2018-06-01:2018-08-01'
 rename_jdocs = True
 fill_jdocs_adr = True
-append_data_flag = False
+append_data_flag = True
 to_postal = True
 check_data_flag = True
 tmp_file = True
-cut_tail_lines = False
+cut_tail_lines = True
 
 cfg = configparser.RawConfigParser(allow_no_value=True)
 cfg.add_section('config')
@@ -145,15 +145,16 @@ def titles_combine_en(df,titles):
     df.columns = titles_trans(titles) + titles_rest
     return df
     
-def save_adjust_xlsx(df,file,titles):
+def save_adjust_xlsx(df,file):
     '''save and re-adjust excel format'''
     df = df.astype(str)
     ew = StyleFrame.ExcelWriter(file)
-    StyleFrame.A_FACTOR = 4
+    StyleFrame.A_FACTOR = 5
     StyleFrame.P_FACTOR = 1.2
-    sf = StyleFrame(df)
-    sf.to_excel(excel_writer=ew,best_fit=titles).save()
-    print('>>> 保存文件 => 文件名:%s...列名:%s => 数据保存成功...' %(file,titles))
+    sf = StyleFrame(df,Styler(**{'wrap_text': False, 'shrink_to_fit':True, 'font_size': 12}))
+    sf.set_column_width_dict(col_width_dict={('当事人', '诉讼代理人', '地址'): 80})
+    sf.to_excel(excel_writer=ew,best_fit=df.columns.difference(['当事人', '诉讼代理人', '地址']).tolist()).save()
+    print('>>> 保存文件 => 文件名:%s...列名:%s => 数据保存成功...' %(file,df.columns.tolist()))
 
 def df_append(df):
     '''fill OA data into df data'''
@@ -163,7 +164,7 @@ def df_append(df):
             df_oa = read_excel(data_orgin,sort=False).tail(OA_last_lines)[titles_oa]
             df_oa.rename(columns={"承办人": '主审法官'},inplace=True)
             df = df.append(df_oa).drop_duplicates(['立案日期','案号']).sort_values(by=['案号'])[df.columns]
-            try:save_adjust_xlsx(df,data_xlsx,titles_cn)
+            try:save_adjust_xlsx(df,data_xlsx)
             except PermissionError: input('>>> data.xlsx 在其他地方打开...请手动关闭并重新执行...任意键退出');sys.exit()
     return df
 
@@ -198,8 +199,8 @@ def renamef(x,y):
     return x
 
 def check_format(column,check=False):
-    if check:
-        if column.map(type).eq(str).any(): # and column.fillna('').apply(check_contain_chinese).any(): # 有中文信息才合格
+    if column.map(type).eq(str).any(): # and column.fillna('').apply(check_contain_chinese).any(): # 有中文信息才合格
+        if check:
             if column.name == 'address':
                 err = column[(column.str.strip().str.len()>2) & (column.str.contains(r'\/地址(\:|：)')==False)]
                 if err.size > 0:
@@ -289,7 +290,7 @@ def fill_duplicate_adr(docs,df_orgin):
             print('==new address==当事人 => %s 代理人 => %s 地址 => %s====='%(user,agent,adr))
         return adr
     dfn['地址'] = dfn_adr.apply(lambda x:copy_rows_adr(x), axis=1)
-    dfn.drop(['new_adr'],axis=1,inplace=True)
+    dfn = dfn.drop(['new_adr'],axis=1).fillna('')
     return dfn
 
 # docs = glob(parse_subpath(jdocs_path,'判决书_*.docx'))
@@ -300,7 +301,7 @@ if fill_jdocs_adr:
     if len(docs)>0:
         print('>>> 找到判决书 => %s...正在填充判决书上地址...' % docs)
         dfn = fill_duplicate_adr(docs,df_orgin)
-        try:save_adjust_xlsx(dfn,data_xlsx,titles_cn)
+        try:save_adjust_xlsx(dfn,data_xlsx)
         except PermissionError: input('>>> data.xlsx 在其他地方打开...请手动关闭并重新执行...任意键退出');sys.exit()
         input('>>> 填充地址到原文件完毕...请手动填充%s的代理人...任意键继续' % data_xlsx)
     else: input('>>> 没有找到判决书docx,可复制判决书到jdocs目录...任意键继续')
@@ -322,6 +323,7 @@ def make_adr(adr,clean_aname=[]):
     adr = df['address'].fillna('').replace(re.compile(r'nan.+'),'')
     adr = adr[adr != '']
     adr = adr.str.strip().str.split(r'\,|\，|\n|\t',expand=True).stack()
+    adr = adr.str.strip().apply(lambda x: x if '/' in x else x+'/')
     adr = adr.str.strip().str.split(r'\/',expand=True).fillna('')  
     adr.columns = ['aname','address']
     adr['address'] = adr['address'].apply(lambda x:re.sub(r'地址(\:|\：)','',x))# drop '地址:'
@@ -333,6 +335,7 @@ def make_agent(agent,clean_aname=[]):
     agent = df['aname'].fillna('').replace(re.compile(r'nan.+'),'')
     agent = agent[agent != '']
     agent = agent.str.strip().str.split(r'\,|\，|\n|\t',expand=True).stack() #Series    
+    agent = agent.str.strip().apply(lambda x: x if '/' in x else x+'/')
     agent = agent.str.strip().str.split(r'\/',expand=True).fillna('') #DataFrame
     agent.columns = ['uname','aname']
     agent['clean_aname'] = agent['aname'].str.strip().apply(lambda x: renamef(x,clean_aname)).apply(lambda x:re.sub(r'\_(.*)','',x)).replace(pat_chinese(),'')
@@ -402,9 +405,10 @@ if check_data_flag:
         
 if tmp_file and len(data):
     data_tmp = os.path.splitext(data_xlsx)[0]+"_temp.xlsx"
-    data.columns = titles_en
+    data_save = data.copy()
+    data_save.columns = titles_trans(data_save.columns.tolist())
     #data.to_excel(data_tmp,index=False)
-    try:save_adjust_xlsx(data,data_tmp,titles_en)
+    try:save_adjust_xlsx(data_save,data_tmp)
     except PermissionError: input('>>> data.xlsx 在其他地方打开...请手动关闭并重新执行...任意键退出');sys.exit()
 else: input('>>> 生成数据失败,请检查源data.xlsx文件...退出');sys.exit()
 
@@ -451,10 +455,11 @@ def re_writ_text(data):
     sheet_file = number_text+'_'+agent_text+'_'+user_text+'_'+address_text+'.docx'
     if '暂缺' in address_text:
         print('%s 暂缺不生成 <= %s'%(address_text,sheet_file))
+    elif '暂缺' in agent_text:
+        print('%s 暂缺不生成 <= %s'%(agent_text,sheet_file))
     else:
         doc.save(parse_subpath(postal_path,sheet_file))
         print('已生成邮单 =>',sheet_file)
-
     return doc
 
 if to_postal:
@@ -462,6 +467,7 @@ if to_postal:
     if not os.path.exists(sheet_docx):
         input('>>> 没有找到邮单模板%s...任意键退出' % sheet_docx);sys.exit()
     data.apply(lambda x:re_writ_text(x),axis = 1)
+    print('>>> 邮单数据范围 => %s-------%s'%(df['number'].astype(str).iloc[0],df['number'].astype(str).iloc[-1]))
     #re_writ_text(data.iloc[1])
 
 #%% main

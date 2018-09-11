@@ -1,0 +1,24 @@
+﻿[config]
+# 数据模板地址
+data_xlsx = data.xlsx
+# oa数据地址
+data_orgin = data_orgin.xlsx
+# 邮单模板地址
+sheet_docx = sheet.docx
+# 是否重命名判决书
+rename_jdocs = True
+# 是否填充判决书地址
+fill_jdocs_adr = True
+# 是否导入oa数据
+append_data_flag = True
+# 导入oa数据的最后几行
+oa_last_lines = 10
+# 是否打印邮单
+to_postal = True
+# 打印数据模板的最后几行
+data_last_lines = 10
+# 打印数据模板的日期范围
+date_range = 2018-06-01:2018-08-01
+# 检查数据模板的内容格式
+check_data_flag = True
+
