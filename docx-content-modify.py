@@ -288,16 +288,18 @@ def get_pre_address(doc,userlist,lines = 20):# range from 20 lines
 def copy_rows_adr(x):
         user = x[0];agent = x[1];adr = x[2];n_adr = x[3]
         if n_adr: 
-            y = [adr]
-            # print('==find address=',n_adr)
+            y = re.split(r'[\,\，]',adr)
+            # if '欧阳可燕' in user: print('==find address=',n_adr)
             for i,k in enumerate(n_adr):
                 # check records from user,agent and address
                 by_agent = any([k in ag for ag in re.findall(r'[\w+\、]*\/[\w+]*',agent)])
+                if by_agent and k in adr:
+                    y = list(filter(lambda x:not k in x,y))
                 # print('-bool-isdict-%s-nokinadr-%s-kinuser-%s-nobyagent-%s--'%(type(n_adr) == dict,not k in adr,k in user,not by_agent))
                 if type(n_adr) == dict and not k in adr and k in user and not by_agent:
                     y += [k+'/地址：'+n_adr.get(k)]
             adr = ','.join(list(filter(None, y)))
-            print('==new address==当事人 => %s 代理人 => %s 地址 => %s'%(user,agent,adr))
+            # if '欧阳可燕' in user: print('==new address==当事人 => %s 代理人 => %s 地址 => %s'%(user,agent,adr))
         return adr
     
 def copy_rows_agent(x):
@@ -499,7 +501,6 @@ def re_writ_text(x):
 
     sheet_file = number_text+'_'+agent_text+'_'+user_text+'_'+address_text+'.docx'
     if not address_text: print('>!> %s 地址暂缺,生成失败 <= %s'%(address_text,sheet_file));return sheet_file
-    print(agent_text)
     # if not path_names_phone(agent_text):
     #     print('>!> %s => 手机格式不对,请自行修改'% agent_text)
     try:
