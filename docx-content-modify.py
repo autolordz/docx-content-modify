@@ -56,7 +56,7 @@ append_data_flag = True
 to_postal = False
 tmp_file = True
 cut_tail_lines = True
-check_data_flag = True
+check_data_flag = False
 
 def write_config(cfgfile):
      with codecs.open(cfgfile, "w", "utf-8-sig") as configfile:
@@ -119,7 +119,8 @@ titles_en2cn = dict(zip(titles_en, titles_cn))
 
 #%% read util
 path_names_ix = re.compile(r'[^A-Za-z\u4e00-\u9fff（）()：:]') # remain only name including old name 包括括号冒号
-path_code_ix = re.compile(r'(\(|\（)([0-9]+)(\)|\）).*?号', re.UNICODE) # case numbers
+path_names_phone = lambda x:re.search(r'[A-Za-z\u4e00-\u9fff（）()：:]+\_\d+',x)
+path_code_ix = re.compile(r'(\(|\（)([0-9]+)(\)|\）).*?号') # case numbers
 path_adr_ix = re.compile(r'住|(市(.*)[0-9])') # chinese address
 path_adr_clean = re.compile(r'户籍|所在地|身份证|住所地|住址|现住|住') # remain only address
 path_adr_cut = re.compile(r'\,|\，|\:|\：|\.|\。')
@@ -174,7 +175,7 @@ def save_adjust_xlsx(df,file):
     StyleFrame.A_FACTOR = 5
     StyleFrame.P_FACTOR = 1.2
     sf = StyleFrame(df,Styler(**{'wrap_text': False, 'shrink_to_fit':True, 'font_size': 12}))
-    sf.set_column_width_dict(col_width_dict={('当事人', '诉讼代理人', '地址'): 80})
+    sf.set_column_width_dict(col_width_dict={('当事人', '诉讼代理人', '地址'): 70})
     sf.to_excel(excel_writer=ew,best_fit=df.columns.difference(['当事人', '诉讼代理人', '地址']).tolist()).save()
     print('>>> 保存文件 => 文件名:%s...列名:%s => 数据保存成功...' %(file,df.columns.tolist()))
 
@@ -210,7 +211,6 @@ def df_make_subset(df_orgin):
 
 def rename_doc_by_infos(file):
     '''rename only judgment doc files'''
-    # doc = Document(file)
     try:doc = Document(file)
     except Exception as e:
         print('读取判决书失败,可能格式不正确 =>',e);return
@@ -227,14 +227,14 @@ def rename_doc_by_infos(file):
 
 def renamef(x,y):
     '''Clean agent name for agent to match address's agent name'''
-    if bool(y):
+    if y:
         for name in y:
             if not check_contain_chinese(name):continue
             if name in x: x = x.replace(x,name);break
     return x
 
 def check_format(column,check=False):
-    if column.any(): # column.map(type).eq(str).any()|and column.fillna('').apply(check_contain_chinese).any(): # 有中文信息才合格
+    if column.any():
         if check:
             if column.name == 'address':
                 err = column[(column.str.strip().str.len()>2) & (column.str.contains(r'\/地址(\:|：)')==False)]
@@ -253,7 +253,7 @@ def check_format(column,check=False):
 def df_rename_jdocs():
     if rename_jdocs:
         docs = glob(parse_subpath(jdocs_path,'*.docx'))
-        if len(docs)>0:
+        if docs:
             print('>>> 正在重命名判决书...')
             for file in docs:
                 if not '判决书' in file:
@@ -261,9 +261,9 @@ def df_rename_jdocs():
             print('>>> 重命名完毕...')
 
 #%% merge address from judgment docs (Chinese Format)
-def get_pre_address(doc,userlist,lines = 20):
+def get_pre_address(doc,userlist,lines = 20):# range from 20 lines
     '''get pre address from judgment docs, return docs pre code and address'''
-    doc = Document(doc).paragraphs[:lines] # range from 30 lines
+    doc = Document(doc).paragraphs[:lines] 
     adrs = {};number = '';users = ''
     for i,para in enumerate(doc):
         x = para.text.strip()
@@ -281,23 +281,22 @@ def get_pre_address(doc,userlist,lines = 20):
                 # print('获取=>',adrs)
             except Exception as e:
                 print('获取人名地址格式不正确 =>',e)
-    users = ''.join([yy for yy in userlist if all(str(l) in yy for l in list(adrs.keys()))])
-    print('找到地址===%s===%s===%s'%(number,users,adrs))
+    users = ''.join([u for u in userlist if all(str(l) in u for l in list(adrs.keys()))])
+    # print('找到地址===%s===%s===%s'%(number,users,adrs))
     return number,adrs,users
 
 def copy_rows_adr(x):
         user = x[0];agent = x[1];adr = x[2];n_adr = x[3]
         if n_adr: 
             y = [adr]
-            print('==find address=',n_adr)
+            # print('==find address=',n_adr)
             for i,k in enumerate(n_adr):
                 # check records from user,agent and address
-                by_agent = ((k in agent) if re.search(r'(.+\、)*.+\/[\u4e00-\u9fff]+',agent) else False) 
-                # print('------bool--%s-%s-%s--%s-'%(type(n_adr) == dict,k in user,not by_agent,not k in adr))
-                if type(n_adr) == dict and k in user and not by_agent and not k in adr:
+                by_agent = any([k in ag for ag in re.findall(r'[\w+\、]*\/[\w+]*',agent)])
+                # print('-bool-isdict-%s-nokinadr-%s-kinuser-%s-nobyagent-%s--'%(type(n_adr) == dict,not k in adr,k in user,not by_agent))
+                if type(n_adr) == dict and not k in adr and k in user and not by_agent:
                     y += [k+'/地址：'+n_adr.get(k)]
             adr = ','.join(list(filter(None, y)))
-            # print('==find address=',y)
             print('==new address==当事人 => %s 代理人 => %s 地址 => %s'%(user,agent,adr))
         return adr
     
@@ -336,7 +335,7 @@ def fill_infos(docs,df_orgin):
 
 def df_infos_fill(df_orgin):
     docs = glob(parse_subpath(jdocs_path,'判决书_*.docx'))
-    if len(docs)>0:
+    if docs:
         print('>>> 找到判决书 => %s' % docs)
         df_new = fill_infos(docs,df_orgin)
         df_new = titles_resort(df_new,titles_cn)
@@ -360,7 +359,7 @@ if os.path.exists(data_xlsx):
     df = df_make_subset(df_orgin)
     print('>>> 读取记录成功...')
 else: input('>>> data.xlsx 记录文件不存在...任意键退出');sys.exit()
-#%% No.
+#%% df tramsfrom
 print('>>> 生成新数据...start')
 number = df[titles_en[:4]]
 number = number.reset_index()
@@ -415,7 +414,8 @@ def reclean_data(tb):
     return x
 
 def sort_data(x):
-    x = x[['level_0','uname','aname','address']].sort_values(by=['level_0']).fillna('***').replace('','***')
+    x = x[['level_0','uname','aname','address']].sort_values(by=['level_0'])
+    # .fillna('***').replace('','***')
     x = merge(number,x,how='right',on=['level_0']).drop(['level_0'],axis=1)
     return x
 
@@ -473,12 +473,10 @@ def re_writ_text(x):
     doc = Document(sheet_docx)
     doc.styles['Normal'].font.bold = True
     
-    is_star = lambda x: x == '***'
-    clean_text = lambda x,y: (y+'#'+'暂缺') if is_star(x) else x
-    agent_text = clean_text(x['aname'],'代理') if not is_star(x['aname']) else clean_text(x['uname'],'当事人')
-    user_text = '代 '+ clean_text(x['uname'],'当事人') if not is_star(x['uname']) and not x['uname'] in agent_text else ''
-    address_text = clean_text(x['address'],'地址')
-    number_text = clean_text(x['number'],'案号')
+    agent_text = x['aname'] if x['aname'] else x['uname']
+    user_text = '' if (x['uname'] in agent_text) else ('代 '+ x['uname'])
+    number_text = x['number']
+    address_text = x['address']
     
     try:
         paragraph = doc.paragraphs[9]  # No.9 line is agent name
@@ -500,19 +498,16 @@ def re_writ_text(x):
         print('替换文本 => %s 失败',paragraph.text)
 
     sheet_file = number_text+'_'+agent_text+'_'+user_text+'_'+address_text+'.docx'
-    if '暂缺' in address_text:
-        # print('%s 暂缺不生成 <= %s'%(address_text,sheet_file))
-        pass
-    elif '暂缺' in agent_text:
-        # print('%s 暂缺不生成 <= %s'%(agent_text,sheet_file))
-        pass
-    elif not re.search(r'[A-z\u4e00-\u9fff]+\_\d+',agent_text):
-        print('%s 手机格式不对,不生成 <= %s'%(agent_text,sheet_file))
-        pass
-    else:
+    if not address_text: print('>!> %s 地址暂缺,生成失败 <= %s'%(address_text,sheet_file));return sheet_file
+    print(agent_text)
+    # if not path_names_phone(agent_text):
+    #     print('>!> %s => 手机格式不对,请自行修改'% agent_text)
+    try:
         doc.save(parse_subpath(postal_path,sheet_file))
         print('>>> 已生成邮单 =>',sheet_file)
-    return doc
+    except Exception as e:
+        print('>!> 生成失败 =>',e)
+    return sheet_file
 
 if to_postal:
     print('>>> 正在生成邮单...')
