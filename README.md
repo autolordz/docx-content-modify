@@ -1,6 +1,17 @@
 
 # docx-content-modify
 
+## Newest
+
+【2018-10-09】
+
+> * 高亮导入OA数据
+> * 优化导入OA数据逻辑
+> * 优化设置FLAG逻辑
+> * 优化保存文件逻辑
+
+## Guide
+
 法院书记员批量生成邮单脚本程序，减轻书记员负担
 
 > * 灵感来自于法院书记员发送案件复制邮单麻烦，完成功能如下
@@ -42,33 +53,33 @@ data_oa_xlsx = data_oa.xlsx
 # 邮单模板地址
 sheet_docx = sheet.docx
 # 是否重命名判决书
-rename_jdocs = False
+flag_rename_jdocs = True
 # 是否填充判决书地址
-fill_jdocs_adr = True
+flag_fill_jdocs_adr = True
 # 是否填充伪手机
-fill_phone_flag = True
+flag_fill_phone = True
 # 是否导入oa数据
-append_data_flag = True
+flag_append_oa = True
 # 导入oa数据的最后几行
-oa_last_lines = 10
+oa_last_lines = 30
 # 是否打印邮单
-to_postal = True
+flag_to_postal = True
 # 打印数据模板的最后几行
 data_last_lines = 100
 # 打印数据模板的日期范围
 date_range = 2018-06-01:2018-08-01
 # 检查数据模板的内容格式
-check_data_flag = True
+flag_check_data = False
 ```
 除了部分当事人地址自动填充外,填充律师规则如下:
 
-人名/人名_电话
+***姓名要保持一致包括曾用名,姓名/姓名_电话,逗号表示分隔,顿号表示一起,'/地址：'不能缺***
 
 | 【当事人】 | 【诉讼代理人】 | 【地址】 |
-| 申请人:姓名A 被申请人:姓名B | 姓名A/律师姓名C_电话 姓名B_电话 | 姓名B/地址：XXX市XXX 姓名C/地址：XXX市XXX |
+| 申请人:姓名A,被申请人:姓名B | 姓名A/律师姓名C_电话,姓名B_电话 | 姓名B/地址：XXX市XXX,姓名C/地址：XXX市XXX |
 | :------| ------: | :------: |
-| 申请人:张三、李四、王五 | 张三/律师张三三_123123_李四四_123123 | 张三三/地址：XXX市XXX |
-| 申请人:赵六、孙七、周八 | 赵六、孙七、周八/代理人吴九_123123,郑十/委托人张三_123123| 吴九/地址：XXX市XXX,张三/地址：XXX市XXX |
+| 申请人:张三(曾用名张五)、李四、王五 | 张三(曾用名张五)/律师张二三_123123_李三四_123123 | 张二三/地址：XXX市XXX |
+| 申请人:赵六(旧名:赵五)、孙七、周八 | 赵六(旧名:赵五),孙七、周八/代理人吴九_123123,郑十/委托人张三_123123| 赵六(旧名:赵五)/地址：XXX市XXX,吴九/地址：XXX市XXX,张三/地址：XXX市XXX |
 
 生成的邮单是没有代理人的单独一份,有代理人的几个当事人合一份,法院书记员的都懂
 
@@ -77,7 +88,7 @@ check_data_flag = True
 THE END
 Enjoy
 
-# Licence
+## Licence
 
 - 版权见代码
 - MIT Licence
