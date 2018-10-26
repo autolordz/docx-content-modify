@@ -105,5 +105,6 @@ venv.bak/
 
 # zip and tmp
 *.zip
+*.exe
 tmp/
 exe-win7-tmp/
