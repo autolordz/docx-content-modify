@@ -32,12 +32,12 @@ set_option('max_rows', 50)
 set_option('max_columns',50)
 
 #%% print_log log
+cfgfile = 'conf.txt'
 logname = 'hist.txt'
 if os.path.exists(logname):
     os.remove(logname)
 def print_log(*args, **kwargs):
     print(*args, **kwargs)
-    # with codecs.open(logname, "a", "utf-8-sig") as file:
     with open(logname, "a",encoding='utf-8') as file:
         print(*args, **kwargs, file=file)
 
@@ -45,23 +45,22 @@ def print_log(*args, **kwargs):
 print_log('''
 Auto generate word:docx from excel:xslx file.
 
-Updated on Thu Oct 25 2018
+Updated on Thu Nov 7 2018
 
 Depends on: python-docx,pandas.
 
 @author: Autoz
 ''')
 #%% config and default values
-cfgfile = 'conf.txt'
+
 data_xlsx = 'data_main.xlsx'
 data_oa_xlsx = 'data_oa.xlsx'
 sheet_docx = 'sheet.docx'
 address_tmp_xlsx = 'address_tmp.xlsx'
 postal_path = os.path.join('.','postal')
 jdocs_path = os.path.join('.','jdocs')
-last_lines_oa = 50
-last_lines_data = 50
-date_range = '2018-09-01:2018-12-01'
+last_lines_oa_data = 50
+date_range_oa_data = '2018-09-01:2018-12-01'
 flag_rename_jdocs = True
 flag_fill_jdocs_adr = True
 flag_fill_phone = False
@@ -69,38 +68,71 @@ flag_append_oa = True
 flag_to_postal = True
 flag_check_jdocs = False
 flag_check_postal = False
-cut_tail_lines = True
-#%%
+
+def set_default_value(**kwargs):
+    global data_xlsx,data_oa_xlsx,sheet_docx,address_tmp_xlsx
+    global last_lines_oa_data,date_range_oa_data
+    global flag_rename_jdocs,flag_fill_jdocs_adr,flag_fill_phone,flag_append_oa
+    global flag_to_postal,flag_check_jdocs,flag_check_jdocs,flag_check_postal
+    data_xlsx = 'data_main.xlsx'
+    data_oa_xlsx = 'data_oa.xlsx'
+    sheet_docx = 'sheet.docx'
+    address_tmp_xlsx = 'address_tmp.xlsx'
+    last_lines_oa_data = 50
+    date_range_oa_data = kwargs.get('date_range_oa_data') if kwargs.get('date_range_oa_data') != None else '# 2018-01-01:2018-12-01'
+    flag_rename_jdocs = True
+    flag_fill_jdocs_adr = True
+    flag_fill_phone = False
+    flag_append_oa = True
+    flag_to_postal = True
+    flag_check_jdocs = False
+    flag_check_postal = False
+    
 def write_config(cfgfile):
     cfg = configparser.ConfigParser(allow_no_value=True,
                                     inline_comment_prefixes=('#', ';'))
-    cfg['config'] = {'data_xlsx': data_xlsx+' # 数据模板地址',
-                     'data_oa_xlsx': data_oa_xlsx+' # OA数据地址',
-                     'sheet_docx': sheet_docx+' # 邮单模板地址',
-                     'flag_rename_jdocs': str(flag_rename_jdocs)+' # 是否重命名判决书',
-                     'flag_fill_jdocs_adr': str(flag_fill_jdocs_adr)+' # 是否填充判决书地址',
-                     'flag_fill_phone': str(flag_fill_phone)+' # 是否填充伪手机',
-                     'flag_append_oa': str(flag_append_oa)+' # 是否导入OA数据',
-                     'flag_to_postal': str(flag_to_postal)+' # 是否打印邮单',
-                     'flag_check_jdocs': str(flag_check_jdocs)+' # 是否检查用户格式,输出提示信息',
-                     'flag_check_postal': str(flag_check_postal)+' # 是否检查邮单格式,输出提示信息',
-                     'date_range': '# '+date_range+' # 打印数据日期范围,比行数优先,去掉注释后读取,井号注释掉',
-                     'last_lines_oa': str(last_lines_oa)+' # 导入OA数据的最后几行,当flag_append_oa开启才有效',
-                     'last_lines_data': str(last_lines_data)+' # 打印数据的最后几行'
+    cfg['config'] = {'data_xlsx': data_xlsx+'    # 数据模板地址',
+                     'data_oa_xlsx': data_oa_xlsx+'    # OA数据地址',
+                     'sheet_docx': sheet_docx+'    # 邮单模板地址',
+                     'flag_rename_jdocs': str(int(flag_rename_jdocs))+'    # 是否重命名判决书',
+                     'flag_fill_jdocs_adr': str(int(flag_fill_jdocs_adr))+'    # 是否填充判决书地址',
+                     'flag_fill_phone': str(int(flag_fill_phone))+'    # 是否填充伪手机',
+                     'flag_append_oa': str(int(flag_append_oa))+'    # 是否导入OA数据',
+                     'flag_to_postal': str(int(flag_to_postal))+'    # 是否打印邮单',
+                     'flag_check_jdocs': str(int(flag_check_jdocs))+'    # 是否检查用户格式,输出提示信息',
+                     'flag_check_postal': str(int(flag_check_postal))+'    # 是否检查邮单格式,输出提示信息',
+                     'date_range_oa_data': date_range_oa_data+'    # 导入OA和打印数据日期范围,比行数优先,去掉注释后读取,井号注释掉',
+                     'last_lines_oa_data': str(last_lines_oa_data)+'    # 导入OA和打印数据的最后几行'
                      }
-    # with codecs.open(cfgfile, 'w', 'utf-8-sig') as configfile:
     with open(cfgfile, 'w',encoding='utf-8-sig') as configfile:
         cfg.write(configfile)
-# write_config(cfgfile)
-#%%
-# cfg.read(cfgfile,'utf-8-sig')
+    print_log('>>> 重新生成配置 %s ...'%cfgfile)
+
+def read_config(cfgfile):
+    global data_xlsx,data_oa_xlsx,sheet_docx,address_tmp_xlsx,postal_path
+    global jdocs_path,last_lines_oa_data,date_range_oa_data
+    global flag_rename_jdocs,flag_fill_jdocs_adr,flag_fill_phone,flag_append_oa
+    global flag_to_postal,flag_check_jdocs,flag_check_jdocs,flag_check_postal
+    cfg = configparser.ConfigParser(allow_no_value=True,
+                                    inline_comment_prefixes=('#', ';'))
+    cfg.read(cfgfile,encoding='utf-8-sig')
+    data_xlsx = cfg['config']['data_xlsx']
+    data_oa_xlsx = cfg['config']['data_oa_xlsx']
+    sheet_docx = cfg['config']['sheet_docx']
+    last_lines_oa_data = int(cfg.get('config','last_lines_oa_data',fallback=last_lines_oa_data))
+    date_range_oa_data = cfg.get('config', 'date_range_oa_data',fallback=date_range_oa_data)
+    flag_rename_jdocs = int(cfg.get('config', 'flag_rename_jdocs',fallback=flag_rename_jdocs))
+    flag_fill_jdocs_adr = int(cfg.get('config', 'flag_fill_jdocs_adr',fallback=flag_fill_jdocs_adr))
+    flag_fill_phone  = int(cfg.get('config', 'flag_fill_phone',fallback=flag_fill_phone))
+    flag_append_oa = int(cfg.get('config', 'flag_append_oa',fallback=flag_append_oa))
+    flag_to_postal = int(cfg.get('config', 'flag_to_postal',fallback=flag_to_postal))
+    flag_check_jdocs = int(cfg.get('config', 'flag_check_jdocs',fallback=flag_check_jdocs))
+    flag_check_postal = int(cfg.get('config', 'flag_check_postal',fallback=flag_check_postal))
 
 #%% global variable
 titles_cn = ['立案日期','案号','原一审案号','主审法官','当事人','诉讼代理人','地址']
 titles_en = ['datetime','number','prenumber','judge','uname','aname','address']
 titles_oa = ['立案日期','案号','原一审案号','承办人','当事人']
-titles_cn2en = dict(zip(titles_cn, titles_en))
-titles_en2cn = dict(zip(titles_en, titles_cn))
 
 path_names_clean = re.compile(r'[^A-Za-z\u4e00-\u9fa5（）()：]') # remain only name including old name 包括括号冒号
 search_names_phone = lambda x: re.search(r'[\w（）()：:]+\_\d+',x)  # phone numbers
@@ -126,37 +158,39 @@ def parse_subpath(path,file):
         os.mkdir(path)
     return os.path.join(path,file)
 
-def check_contain_chinese(x):
+def check_cn_str(x):
     '''check if string contain chinese'''
     return bool(re.search(r'[\u4e00-\u9fa5]',str(x)))
 
 def parse_datetime(date):
+    '''datetime transform'''
     try:date = datetime.datetime.strptime(date,'%Y-%m-%d')
     except ValueError:print_log('时间范围格式有误,默认选取全部日期');date = ''
     return date
 
 def titles_trans(df_list):
     '''change titles between Chinese and English'''
-    flag = check_contain_chinese(df_list[0])
-    tdict = titles_cn2en if flag else titles_en2cn
-    # print_log('Change titles to:', 'Chinese' if flag else 'English')
-    return [tdict.get(x) for x in df_list if x in tdict.keys()]
+    titles_cn2en = dict(zip(titles_cn, titles_en))
+    titles_en2cn = dict(zip(titles_en, titles_cn))
+    trans_cn_en = list(map(lambda x,y:(titles_cn2en if y else titles_en2cn).get(x),
+                           df_list,list(map(check_cn_str,df_list))))
+    return trans_cn_en
+
+def titles_trans_columns(df,titles):
+    '''sub-replace columns titles you want'''
+    titles_rest = df.drop(titles,axis=1).columns.tolist()
+    df = df[titles + titles_rest]
+    df.columns = titles_trans(titles) + titles_rest
+    return df
 
 def titles_resort(df,titles):
     '''resort titles with orders'''
     titles_rest = df.drop(titles,axis=1).columns.tolist()
     return df[titles + titles_rest]
 
-def titles_combine_en(df,titles):
-    '''refer to titles to sub-replace with columns titles'''
-    titles_rest = df.drop(titles,axis=1).columns.tolist()
-    df = df[titles + titles_rest]
-    df.columns = titles_trans(titles) + titles_rest
-    return df
-
 def save_adjust_xlsx(df,file='test.xlsx',width=60):
     '''save and re-adjust excel format'''
-    df.reset_index(drop='index',inplace=True)
+    df = df.reset_index(drop='index').fillna('')
     StyleFrame.A_FACTOR = 5
     StyleFrame.P_FACTOR = 1.2
     sf = StyleFrame(df,Styler(wrap_text = False, shrink_to_fit=True, font_size= 12))
@@ -169,10 +203,15 @@ def save_adjust_xlsx(df,file='test.xlsx',width=60):
                               styler_obj=Styler(wrap_text=False,shrink_to_fit=True))
     else:
         sf.set_column_width_dict(col_width_dict={('当事人', '诉讼代理人', '地址'): width})
-    sf.to_excel(file,best_fit=sf.data_df.columns.difference(['当事人', '诉讼代理人', '地址']).tolist()).save()
+    if len(df):
+        sf.to_excel(file,best_fit=sf.data_df.columns.difference(['当事人', '诉讼代理人', '地址']).tolist()).save()
+    else:
+        sf.to_excel(file).save()
     print_log('>>> 保存文件 => 文件名 \'%s\' => 数据保存成功...' %(file))
     return df
 
+#%%
+    
 def read_jdocs_table(tables):
     codes = ''
     for table in tables:
@@ -189,10 +228,13 @@ def get_jdocs_infos(doc,lines = 20):# search at least 20 lines docs
     '''get pre address from judgment docs, return docs pre code and address'''
     adrs = {};codes = ''
     try:tables = Document(doc).tables
-    except Exception as e: input('读取错误 %s 请关闭或检查docx文档 '%e);sys.exit()
+    except Exception as e: 
+        print('读取错误 %s ,docx文档问题,请重新另存为,或关闭已打开的docx文档'%e)
+        return codes,adrs
     if tables: codes = read_jdocs_table(tables)
     paras = Document(doc).paragraphs
-    if not paras: return codes,adrs
+    if not paras:
+        return codes,adrs
     if len(paras) > 20:lines = int(len(paras)/2)
     parass = paras[:lines]
     for i,para in enumerate(parass):
@@ -204,7 +246,7 @@ def get_jdocs_infos(doc,lines = 20):# search at least 20 lines docs
         if re.search(r'(?<=[：:]).*?(?=[,，。])',x) and re.search(r'(户[籍口]|居住|所在地?|住所地?|住址?|原住|现住?).*?[省市州县区乡镇村]',x):
             try:
                 name = re.search(r'(?<=[：:]).*?(?=[,，。])|$',x).group(0).strip()
-                name = name if re.search(r'[(（]曾用名.*?[）)]',x) else re.sub(r'[(（].*?[）)]','',name)
+                name = re.sub(r'[(（][下称|原名|反诉|变更前].*?[）)]','',name) # filter some special names,notice here will add some words for filter
                 z = re.split(r'[,，:：.。]',x)
                 z = [re.sub(r'户[籍口]|居住|身份证|所在地|住所地?|住址?|^[现原]住?','',y) for y in z if re.search(r'.*?[省市州县区乡镇村]',y)][-1] # 几个地址选最后一个 remain only address
                 adr = {name:''.join(z)}
@@ -220,7 +262,6 @@ def rename_jdoc_x(doc,codes):
     if not codes in doc:# os.path.exists(jdoc_name)
         try:
             os.rename(doc,jdoc_name)
-            # print_log('>>> %s 重命名判决书1 => %s'%(doc,jdoc_name))
             return True
         except Exception as e:
             print_log(e)
@@ -229,19 +270,138 @@ def rename_jdoc_x(doc,codes):
     return False
 
 def get_all_jdocs(docs):
-    numlist=[]; nadr = []
+    numlist=[]; nadr = [];jcount = 0
     for doc in docs:
         codes,adrs = get_jdocs_infos(doc)
         if codes and flag_rename_jdocs:
             rename_jdoc_x(doc,codes)
+            jcount += 1
         numlist.append(codes)
         nadr.append(adrs)
     numlist = list(map(case_codes_fix,numlist))
     x = DataFrame({'原一审案号':numlist,'new_adr':nadr})
+    if flag_check_jdocs:print_log('>>> 获取判决书信息【%s】条'%jcount)
     return x
 
+#%%
+def copy_rows_adr(x):
+    ''' copy jdocs address to address column''' '''['当事人','诉讼代理人','地址','new_adr','案号']'''
+    x[:3] = x[:3].astype(str)
+    user = x[0];agent = x[1];adr = x[2];n_adr = x[3];codes = x[4]
+    if not isinstance(n_adr,dict):
+        return adr
+    else:
+        y = re.split(r'[,，]',adr);adr1 = y.copy()
+        for i,k in enumerate(n_adr):
+            by_agent = any([k in ag for ag in re.findall(r'[\w+、]*\/[\w+]*',agent)]) # if agent format is 'XX、XX/XX_123123'
+            if by_agent and k in adr: # remove user's address when user with agent
+                y = list(filter(lambda x:not k in x,y))
+            if type(n_adr) == dict and not k in adr and k in user and not by_agent:
+                y += [k+adr_tag+n_adr.get(k)] # append address by rules
+        adr2 = y.copy()
+        adr =  '，'.join(list(filter(None, y)))
+        if Counter(adr1) != Counter(adr2) and flag_check_jdocs and adr:print_log('>>> 【%s】成功复制判决书地址=>【%s】'%(codes,adr))
+    return adr
+
+def copy_rows_agent(x):
+    '''copy example phone-numbers to agent column if empty''' '''['当事人','诉讼代理人','地址','new_adr','案号']'''
+    x = x.astype(str)
+    user = x[0];agent = x[1];adr = x[2];codes = x[4]
+    users = user_to_list(user)
+    y = re.split(r'[,，]',agent);agent1 = y.copy()
+    for i,u in enumerate(users):
+        if not u in agent and u in adr:
+            y += [u+'_12345678910'] # fake tel
+    agent2 = y.copy()
+    agent = '，'.join(list(filter(None, y)))
+    if Counter(agent1) != Counter(agent2) and flag_check_jdocs and agent:print_log('>>> 【%s】成功复制伪手机=>【%s】'%(codes,agent))
+    return agent
+
+def copy_users_compare(jrow,df,errs=list('    ')):
+    '''copy users and check users completement'''
+    # errs:['【OA无用户记录】','【怀疑用户错别字】','【用户字段重复】','【相似】','【系列】'];urow = errs[0]
+    x = Counter(list(jrow['new_adr'].keys())) # 判决书
+    y = Counter(user_to_list(df['当事人'])) # 新案
+    # len(list((x&y).elements()))/(len(list((x|y).elements())) - len(list(((x|y)-(x&y)).elements()))/2.)
+    rxy = len(list((x&y).elements()))/len(list((x|y).elements()))
+    rxyx = len(list((x&y).elements()))/len(list(x.elements()))
+    rxyy = len(list((x&y).elements()))/len(list(y.elements()))
+    # print('x=',x);print('y=',y);print('rxy=',rxy)
+    if rxy == 0: # 不相交
+        return errs[0]
+    if max(x.values()) > 1 or max(y.values()) > 1: # 字段重复
+        xdu = [k for k,v in x.items() if v > 1] # 重复的内容
+        ydu = [k for k,v in y.items() if v > 1]
+        print_log('>>> 判决书或OA【用户重复】【%s】【判决书:%s:%s】-【OA或Data:%s:%s】'
+                  %("{0:.0%}".format(rxy),jrow['原一审案号'],xdu,df['原一审案号'],ydu))
+        return errs[2]
+    if rxy == 1: # 完全匹配
+        return df['当事人']
+    if 0 < rxy < 1: # 错别字
+        dx = list((x-y).elements())
+        dy = list((y-x).elements())
+        xx = Counter(''.join(dx))
+        yy = Counter(''.join(dy))
+        rxxyy = len(list((xx&yy).elements()))/len(list((xx|yy).elements()))
+        if rxxyy >= .5:
+            print_log('>>> 判决书或OA【错别字 %s】-【判决书:%s:%s-OA或Data:%s:%s】'
+                      %("{0:.0%}".format(1-rxxyy),jrow['原一审案号'],dx,df['原一审案号'],dy))
+            return errs[1]
+        if rxxyy >= .2:
+            print_log('>>> 判决书或OA【差异 %s】-【相同:%s】-【差异:判决书:%s:%s-OA或Data:%s:%s】'
+                          %("{0:.0%}".format(1-rxxyy),list((x&y).elements()),jrow['原一审案号'],dx,df['原一审案号'],dy))
+            return df['当事人']
+    if rxyy > .8: # 判决书>新案
+        if str(jrow['原一审案号']) != str(df['原一审案号']):# 系列案
+            if flag_check_jdocs:print_log('>>> 判决书或OA【系列案 %s】-【判决书:%s-OA或Data:%s】'
+                      %("{0:.0%}".format(rxy),jrow['原一审案号'],df['原一审案号']))
+            return errs[4]
+        else:return df['当事人']
+    if rxyx > .8: # 判决书<新案
+        print_log('>>> 判决书或OA【判决书少于新案,新案缺部分地址 %s】-【判决书:%s-OA或Data:%s】'
+                  %("{0:.0%}".format(rxy),jrow['原一审案号'],df['原一审案号']))
+        return df['当事人']
+    return errs[0]
+    
+#%%
+
+def save_jdocs_infos(x):
+    '''save remane jdocs'''
+    try:
+        x = x.fillna('')
+        global address_tmp;address_tmp = x.copy()
+        x.to_excel(address_tmp_xlsx,index=False)
+        # print_log('保存地址文件到 => %s...'%address_tmp_xlsx)
+    except Exception as e:
+        print_log('%s <= 保存失败,请检查... %s'%(address_tmp_xlsx,e))
+        
+def copy_rows_user_func(dfj,dfo):
+    '''copy users line regard adr user'''
+    errs = ['【OA无用户记录】','【怀疑用户错别字】','【用户字段重复】','【相似】','【系列】'];urow = errs[0]
+    for (i,dfjr) in dfj.iterrows():
+        dfj.loc[i,'当事人'] = errs[0]
+        if isinstance(dfjr['new_adr'],dict):
+            if not dfjr['new_adr']:# 提取jdocs字段失败
+                dfj.loc[i,'当事人'] = '【检查判决书用户(冒号)】';continue
+            dfs = dfo[dfo['原一审案号']==dfjr['原一审案号']]
+            if len(dfs) > 0:# 同案号
+                dfj.loc[i,'当事人'] = copy_users_compare(dfjr,dfs.iloc[0],errs);continue
+            else:#[::-1] # 没案号则遍历源数据dfo
+                for (j,dfor) in dfo[['原一审案号','当事人']][::-1].iterrows():
+                    urow = copy_users_compare(dfjr,dfor,errs)
+                    if urow not in errs:
+                        dfj.loc[i,'当事人'] = urow;break
+                    elif urow == errs[4]:# 假如相似则添加一行jdocs数据
+                        dfj = dfj.append(DataFrame({'原一审案号':[dfor['原一审案号']],
+                                                '当事人':[dfor['当事人']],
+                                                'new_adr':[dfjr['new_adr']]}),
+                                                sort=False)
+    save_jdocs_infos(dfj)
+    return dfj
+
+#%%   
 def rename_jdocs_codes_x(d,r):
-    '''add jdoc now case codes for reference'''
+    '''add jdoc current case codes for reference'''
     if str(r['原一审案号_y']) in str(d):
         nd = os.path.join(os.path.split(d)[0],'判决书_'+str(r['案号']) +'_原_'+ str(r['原一审案号_y']) + '.docx')
         if(d == nd):return d
@@ -252,7 +412,6 @@ def rename_jdocs_codes_x(d,r):
                 shutil.copyfile(d,nd)
             else:
                 os.rename(d,nd)
-            # print_log('>>> %s 重命名判决书2 => %s'%(d,nd))
         except Exception as e:
             print_log(e)
         return nd
@@ -265,103 +424,38 @@ def rename_jdocs_codes(docs,df):
         docs = list(map(lambda x:rename_jdocs_codes_x(x,r),docs))
     return docs
 
-def save_jdocs_infos(x):
-    try:
-        global address_tmp
-        address_tmp = x.copy()
-        x.to_excel(address_tmp_xlsx,index=False)
-        print_log('保存地址文件到 => %s...'%address_tmp_xlsx)
-    except Exception as e:
-        print_log('%s <= 保存失败,请检查... %s'%(address_tmp_xlsx,e))
-
-def copy_rows_adr(x):
-    ''' copy jdocs address to address column'''
-    x[:3] = x[:3].astype(str)
-    user = x[0];agent = x[1];adr = x[2];n_adr = x[3]
-    if not isinstance(n_adr,dict):return adr
-    y = re.split(r'[,，]',adr)
-    for i,k in enumerate(n_adr):
-        by_agent = any([k in ag for ag in re.findall(r'[\w+、]*\/[\w+]*',agent)])
-        if by_agent and k in adr: # remove user's address when user with agent
-            y = list(filter(lambda x:not k in x,y))
-        if type(n_adr) == dict and not k in adr and k in user and not by_agent:
-            y += [k+adr_tag+n_adr.get(k)] # append address by rules
-    adr =  '，'.join(list(filter(None, y)))
-    return adr
-
-def copy_rows_agent(x):
-    '''copy example phone-numbers to agent column if empty'''
-    x = x.astype(str)
-    user = x[0];agent = x[1];adr = x[2]
-    users = user_to_list(user)
-    y = [agent]
-    for i,u in enumerate(users):
-        if not u in agent and u in adr:
-            y += [u+'_12345678910'] # fake tel
-    agent = ','.join(list(filter(None, y)))
-    return agent
-
-def copy_users_compare(jrow,df):
-    x = Counter(list(jrow['new_adr'].keys()))
-    y = Counter(user_to_list(df['当事人']))
-    dx = list((x-y).elements())
-    dy = list((y-x).elements())
-    rxy = len(list((x&y).elements()))/len(list((x|y).elements()))
-    # if rxy > 0:print('rxy:',rxy)
-    if rxy == 0:return ''
-    if max(x.values()) > 1 or max(y.values()) > 1:
-        xdu = [k for k,v in x.items() if v > 1]
-        ydu = [k for k,v in y.items() if v > 1]
-        print_log('>>> 判决书和OA用户重复【%s】【判决书:%s:%s】-【OA或Data:%s:%s】-【【判断出错！！[不]拷贝地址！！请检查修改OA或Data！！】'
-                  %("{0:.0%}".format(1-rxy),jrow['原一审案号'],xdu,df['原一审案号'],ydu))
-        return ''
-    if rxy == 1:return df['当事人']
-    if 0 < rxy < 1:
-        xx = Counter(''.join(dx))
-        yy = Counter(''.join(dy))
-        rxxyy = len(list((xx&yy).elements()))/len(list((xx|yy).elements()))
-        if rxxyy >= .6:
-            print_log('>>> 判决书和OA用户差异【%s】【判决书:%s:%s】-【OA或Data:%s:%s】-【判断出错！！[不]拷贝地址！！请检查修改OA或Data！！】'
-                      %("{0:.0%}".format(1-rxy),jrow['原一审案号'],dx,df['原一审案号'],dy))
-            return ''
-        if flag_check_jdocs:
-            print_log('>>> 判决书和OA用户疑似差异【%s】【判决书:%s:%s】-【OA或Data:%s:%s】-【判断案件[相同]拷贝地址】'
-                      %("{0:.0%}".format(1-rxy),jrow['原一审案号'],dx,df['原一审案号'],dy))
-        return df['当事人']
-    return ''
-
-def copy_rows_users(jrow,df):
-    '''copy users line regard adr user'''
-    urow = ''
-    if isinstance(jrow['new_adr'],dict):
-        dfjr = df[df['原一审案号']==jrow['原一审案号']]
-        if len(dfjr) > 0:
-            urow = copy_users_compare(jrow,dfjr.iloc[0])
-        else:#[::-1]
-            for (i,r) in df[['原一审案号','当事人']][::-1].iterrows():
-                urow = copy_users_compare(jrow,r)
-                if urow:break
-    return urow
-
-def func_infos_fill(df_jdocs,df_orgin):
-    '''combine address between data and judgment docs and delete duplicate'''
-    df_jdocs['当事人'] = df_jdocs.apply(lambda x:copy_rows_users(x,df_orgin), axis=1)
-    # save infos
-    save_jdocs_infos(df_jdocs)
-    x = merge(df_orgin,df_jdocs,how='left',on=['当事人'])
-    x['原一审案号_y'] = x['原一审案号_y'].fillna(x['原一审案号_x'])
-    x = x.drop_duplicates(['案号','当事人']).fillna('')
-    # rename with new codes
+def rename_jdocs_codes_func(x):
+    '''rename with new codes'''
     docs = glob(parse_subpath(jdocs_path,'判决书_*.docx'))
-    if flag_fill_jdocs_adr and docs:rename_jdocs_codes(docs,x)
-    # after rename then clean df codes
-    x['原一审案号'] = x['原一审案号_x']
-    x.drop(['原一审案号_x','原一审案号_y'],axis=1,inplace=True)
-    xx = x.loc[:,['当事人','诉讼代理人','地址','new_adr']]
-    xx['地址'] = xx.apply(lambda x:copy_rows_adr(x), axis=1)
-    if flag_fill_phone: xx['诉讼代理人'] = xx.apply(lambda x:copy_rows_agent(x), axis=1)
+    if docs:rename_jdocs_codes(docs,x)
+    return x
+#%%
+def merge_dfj_dfo(dfj,dfo):
+    x = merge(dfo,dfj,how='left',on=['当事人'])
+    x = titles_resort(x,['立案日期','案号','原一审案号_x','原一审案号_y'])
+    x = x.drop_duplicates(['案号','当事人'])
+    x['原一审案号_y'] = x['原一审案号_y'].fillna(x['原一审案号_x'])
+    return x
+    
+def copy_rows_agent_adr_func(x):
+    xx = x[['当事人','诉讼代理人','地址','new_adr','案号']].copy()
+    xx['地址'] = xx.apply(lambda x:copy_rows_adr(x), axis=1)# copy address
+    if flag_fill_phone: xx['诉讼代理人'] = xx.apply(lambda x:copy_rows_agent(x), axis=1)# copy agent
     x[['地址','诉讼代理人']] =  xx[['地址','诉讼代理人']]
-    x = x.drop(['new_adr'],axis=1).fillna('')
+    return x
+
+def fill_infos_clean(x):
+    x['原一审案号'] = x['原一审案号_x']
+    x = x.drop(['原一审案号_x','原一审案号_y','new_adr'],axis=1).fillna('')
+    return x
+    
+def fill_infos_func(dfj,dfo):
+    '''combine address between data and judgment docs and delete duplicate'''
+    dfj = copy_rows_user_func(dfj,dfo)
+    x = merge_dfj_dfo(dfj,dfo)
+    x = rename_jdocs_codes_func(x)
+    if flag_fill_jdocs_adr:x = copy_rows_agent_adr_func(x)
+    x = fill_infos_clean(x)
     return x
 
 #%% df process steps
@@ -374,66 +468,75 @@ def df_read_fix(df):
     df[['案号','原一审案号']] = df[['案号','原一审案号']].applymap(case_codes_fix)
     return df
 
-def df_infos_fill(df_orgin):
+def df_fill_infos(dfo):
     '''main fill jdocs infos'''
-    # docs = glob(parse_subpath(jdocs_path,'判决书_*.docx'))
-    docs = glob(parse_subpath(jdocs_path,'*.docx'))
-    if not docs:return df_orgin
-    df_jdocs = get_all_jdocs(docs)
-    if len(df_jdocs) == 0:print_log('>>> 没有找到判决书...不处理！！');return df_orgin
-    if len(df_orgin) == 0:return df_orgin
-    df_new = func_infos_fill(df_jdocs,df_orgin)
-    df_new = titles_resort(df_new,titles_cn)
+    docs = glob(parse_subpath(jdocs_path,'*.docx')) # get jdocs
+    if not docs:return dfo
+    dfj = get_all_jdocs(docs)
+    if len(dfj) == 0:print_log('>>> 没有找到判决书...不处理！！');return dfo
+    if len(dfo) == 0:return dfo
+    dfn = fill_infos_func(dfj,dfo)
+    dfn = titles_resort(dfn,titles_cn)
     try:
-        df_new = save_adjust_xlsx(df_new,data_xlsx)
-        df_orgin = df_new
+        dfo = save_adjust_xlsx(dfn,data_xlsx)
     except PermissionError:
         print_log('>>> %s 文件已打开...填充判决书地址失败！！...请关闭并重新执行'%data_xlsx)
-    return df_orgin
+    return dfo
+#%%
+def df_make_subset(dfo,titles,date_range,last_lines):
+    '''cut orgin data into subset df data'''
+    df = titles_trans_columns(dfo,titles)
+    if ':' in date_range:
+        print_log('>>> 预定读取【%s】'%date_range)
+        df['datetime'] = to_datetime(df['datetime'])
+        df.sort_values(by=['datetime'],inplace=True)
+        try:
+            dats = date_range.split(':')
+            x = parse_datetime(dats[0]);y = parse_datetime(dats[1])
+            x1 = df['datetime'].iloc[0].to_pydatetime()
+            y1 = df['datetime'].iloc[-1].to_pydatetime()
+            t1 = min(x,y); t2 = max(x,y)
+            t1 = max(t1,x1);t2 = min(t2,y1)
+            date_start = t1 if t1 else x1
+            date_end = t2 if t2 else y1
+            df = df[(df['datetime']>=date_start)&(df['datetime']<=date_end)]
+            df['datetime'] = df['datetime'].astype(str)
+            return df
+        except Exception as e:
+            print_log('>>> 日期异常',e)
+    if last_lines:
+        print_log('>>> 预定读取【%s条】'%last_lines)
+        df = df.tail(last_lines)
+    return df
 
+#%%
 def df_oa_append(df_orgin):
     '''main fill OA data into df data and mark new add'''
     if flag_append_oa:
         if not os.path.exists(data_oa_xlsx):
             print_log('>>> 没有找到OA模板 %s...不处理！！'%data_oa_xlsx);return df_orgin
-        df_oa = read_excel(data_oa_xlsx,sort=False,na_values='').tail(last_lines_oa)[titles_oa].fillna('') # only oa columns
-        df_oa.rename(columns={'承办人':'主审法官'},inplace=True)
-        df_oa = df_read_fix(df_oa) # fix empty data columns
-        df1 = df_orgin.copy()
-        df2 = df_oa
+        df_oa = read_excel(data_oa_xlsx,sort=False)[titles_oa].fillna('') # only oa columns
+        df1 = df_orgin.copy();df2 = df_oa.copy()
+        df2 = df_make_subset(df2,['立案日期'],date_range_oa_data,last_lines_oa_data) # subset by dates and range
+        df2 = titles_trans_columns(df2,['datetime'])
+        df2.rename(columns={'承办人':'主审法官'},inplace=True)
+        df2 = df_read_fix(df2) # fix empty data columns
         df2['add_index'] = 'new'
         df1['add_index'] = 'old'
         df3 = df1.append(df2,sort=False).drop_duplicates(['立案日期','案号'],keep='first')
         df3.sort_values(by=['立案日期','案号'],inplace=True)
+        df_noa = df3[df3['add_index'] == 'new']
+        print_log('>>> 所有OA记录【%s条】...'%len(df_oa))
+        print_log('>>> 原Data记录【%s条】...'%len(df_orgin))
+        print_log('>>> 实际添加【%s条】新OA记录...'%len(df_noa))
+        if len(df_noa):
+            dd = str(df_noa['立案日期'].iloc[0]) +':'+df_noa['立案日期'].iloc[-1]
+            print_log('>>> 实际添加【%s】'%dd)
         if any(df3['add_index'] == 'new'):
             df3 = titles_resort(df3,titles_cn)
-            try:
-                df_orgin = save_adjust_xlsx(df3,data_xlsx)
+            try:df_orgin = save_adjust_xlsx(df3,data_xlsx)
             except PermissionError:print_log('>>> %s 文件已打开...填充OA数据失败！！。。。请关闭并重新执行'%data_xlsx)
-        print_log('>>> 预计添加【%s条】OA记录...'%last_lines_oa)
-        print_log('>>> 实际添加【%s条】新OA记录...'%len(df3[df3['add_index'] == 'new']))
     return df_orgin
-
-def df_make_subset(df_orgin):
-    '''cut orgin data into subset df data'''
-    df = titles_combine_en(df_orgin,titles_cn)
-    dfs = df.copy()
-    if ':' in date_range:
-        print_log('>>> 找到日期范围【%s】，优先读取日期'%date_range)
-        df['datetime'] = to_datetime(df['datetime'])
-        df.sort_values(by=['datetime'],inplace=True)
-        dats = date_range.split(':')
-        dats[0] = parse_datetime(dats[0]);dats[1] = parse_datetime(dats[1]);
-        date_start = dats[0] if dats[0] else df['datetime'][0]
-        date_end = dats[1] if dats[1] else df['datetime'].iloc[-1]
-        df = df[(df['datetime']>date_start)&(df['datetime']<date_end)]
-        df['datetime'] = df['datetime'].astype(str)
-        if len(df) == 0:df = dfs
-    elif last_lines_data:
-        print_log('>>> 预定读取【%s条】记录...'%last_lines_data)
-        df = df.tail(last_lines_data) if cut_tail_lines else df.head(last_lines_data)
-    print_log('>>> 实际读取【%s条】记录...'%len(df))
-    return df
 
 def df_check_format(x):
     '''check data address and agent format with check flag'''
@@ -444,56 +547,54 @@ def df_check_format(x):
     return x
 
 #%% main processing stream
+
 try:
     if not os.path.exists(cfgfile):
+        set_default_value()
         write_config(cfgfile)
-        print_log('>>> 生成配置文件...')
-    # cfg.read(cfgfile,'utf-8-sig')
-    cfg = configparser.ConfigParser(allow_no_value=True,
-                                    inline_comment_prefixes=('#', ';'))
-    cfg.read(cfgfile,encoding='utf-8-sig')
-    data_xlsx = cfg['config']['data_xlsx']
-    data_oa_xlsx = cfg['config']['data_oa_xlsx']
-    sheet_docx = cfg['config']['sheet_docx']
-    last_lines_oa = cfg['config'].getint('last_lines_oa')
-    last_lines_data = cfg.getint('config', 'last_lines_data')
-    date_range = cfg.get('config', 'date_range')
-    flag_rename_jdocs = cfg.getboolean('config', 'flag_rename_jdocs')
-    flag_fill_jdocs_adr = cfg.getboolean('config', 'flag_fill_jdocs_adr')
-    flag_fill_phone  = cfg.getboolean('config', 'flag_fill_phone')
-    flag_append_oa = cfg.getboolean('config', 'flag_append_oa')
-    flag_to_postal = cfg.getboolean('config', 'flag_to_postal')
-    flag_check_jdocs = cfg.getboolean('config', 'flag_check_jdocs')
-    flag_check_postal = cfg.getboolean('config', 'flag_check_postal')
+    read_config(cfgfile)
 except Exception as e:
-    # raise e
-    print_log('>>> 配置文件出错 %s ,已删除...'%e)
+    print_log('>>> 配置文件出错 %s ,删除...'%e)
     if os.path.exists(cfgfile):
         os.remove(cfgfile)
+    try:
+        set_default_value()
+        write_config(cfgfile)
+        read_config(cfgfile)
+    except Exception as e:
+        set_default_value(date_range_oa_data = '')
+        print_log('>>> 配置文件再次生成失败 %s ...'%e)
         
 print_log('''>>> 正在处理...
     主表路径 = %s
     指定日期 = %s
+    重命名判决书 = %s
+    填充判决书地址 = %s
+    导入OA数据 = %s
+    打印邮单 = %s
     输出判决书提示 = %s
     输出邮单提示 = %s
-    '''%(os.path.abspath(data_xlsx),str(date_range),str(flag_check_jdocs),str(flag_check_postal)))
+    '''%(os.path.abspath(data_xlsx),str(date_range_oa_data),
+    str(flag_rename_jdocs),str(flag_fill_jdocs_adr),str(flag_append_oa),str(flag_to_postal),
+    str(flag_check_jdocs),str(flag_check_postal)))
 
-if os.path.exists(data_xlsx):
-    df_orgin = read_excel(data_xlsx,sort=False).fillna('')
-    df_orgin = df_read_fix(df_orgin) # fix empty data columns
-    df_orgin = df_oa_append(df_orgin)
-    df_orgin = df_infos_fill(df_orgin)
-    df = df_make_subset(df_orgin)
-    if flag_check_postal:df.apply(lambda x:df_check_format(x), axis=1)
-    print_log('>>> 读取记录成功...')
-else: input('>>> %s 记录文件不存在...任意键退出'%(data_xlsx));sys.exit()
+if not os.path.exists(data_xlsx):
+    save_adjust_xlsx(DataFrame(columns=titles_cn),data_xlsx,width=40)
+    print_log('>>> %s 记录文件不存在...重新生成'%(data_xlsx))
+df_orgin = read_excel(data_xlsx,sort=False).fillna('')
+df_orgin = df_read_fix(df_orgin) # fix empty data columns
+df_orgin = df_oa_append(df_orgin) # append oa data
+df_orgin = df_fill_infos(df_orgin) # fill jdocs infos
+df = df_make_subset(df_orgin,titles_cn,date_range_oa_data,last_lines_oa_data)
+if flag_check_postal:df.apply(lambda x:df_check_format(x), axis=1)
+print_log('>>> 打印Data记录【%s条】...'%len(df))
 
 #%% df tramsfrom functions
 def clean_rows_aname(x,names):
     '''Clean agent name for agent to match address's agent name'''
     if names:
         for name in names:
-            if not check_contain_chinese(name):continue
+            if not check_cn_str(name):continue
             if name in x:x = x.replace(x,name);break
         x = re.sub(r'_.*','',x)
         x = re.sub(path_names_clean,'',x)
@@ -560,14 +661,14 @@ def reclean_data(tb):
     x = concat([rest,tg],axis=0,sort=True)
     return x
 
-def sort_data(x):
+def sort_data(x,number):
     x = x[['level_0','uname','aname','address']].sort_values(by=['level_0'])
     x = merge(number,x,how='right',on=['level_0']).drop(['level_0'],axis=1).fillna('')
     return x
 
 #%% df tramsfrom stream
 
-if flag_to_postal:
+if len(df) and flag_to_postal:
     try:
         print_log('>>> 开始生成新数据...')
         number = df[titles_en[:4]]
@@ -592,7 +693,7 @@ if flag_to_postal:
             agent = make_agent(agent,adr['clean_aname'].tolist())
             agent = merge_user(user,agent)
             df_x = reclean_data(merge_agent_adr(agent,adr))
-            df_x = sort_data(df_x)
+            df_x = sort_data(df_x,number)
         elif opt.address:
             print_log('>>> 只有【地址】...正在处理...')
             adr = make_adr(adr,user['uname'].tolist())
@@ -600,33 +701,33 @@ if flag_to_postal:
             adr = merge_user(user,adr)
             adr = adr.assign(aname='')
             df_x = reclean_data(adr)
-            df_x = sort_data(df_x)
+            df_x = sort_data(df_x,number)
         elif opt.aname:
             print_log('>>> 只有【代理人】...正在处理...')
             agent = make_agent(agent)
             agent = merge_user(user,agent)
             agent = agent.assign(address='')
             df_x = reclean_data(agent)
-            df_x = sort_data(df_x)
+            df_x = sort_data(df_x,number)
         else:
             print_log('>>> 缺失【代理人】和【地址】...正在处理...')
             agent_adr.index.name = 'level_0'
             agent_adr.reset_index(inplace=True)
             df_x = merge(user,agent_adr,how='left',on=['level_0']).fillna('')
-            df_x = sort_data(df_x)
-
-        del user,agent,number,adr,df,agent_adr
+            df_x = sort_data(df_x,number)
 
         if len(df_x):
-            data_tmp = os.path.splitext(data_xlsx)[0]+"_tmp.xlsx"
+            data_tmp = os.path.splitext(data_xlsx)[0]+"_temp.xlsx"
             df_save = df_x.copy()
             df_save.columns = titles_trans(df_save.columns.tolist())
             try:df_save = save_adjust_xlsx(df_save,data_tmp,width=40)
             except PermissionError: print_log('>>> %s 文件已打开...请手动关闭并重新执行...保存失败'%data_tmp)
 
+        del user,number,agent,adr,df,agent_adr,opt
     except Exception as e:
         raise e
         print_log('>>> 错误 \'%s\' 生成数据失败,请检查源 \'%s\' 文件...退出...'%(e,data_xlsx));sys.exit()
+
 #%% generate postal sheets
 
 def re_write_text(x):
@@ -671,9 +772,6 @@ def re_write_text(x):
     if not address_text:
         if flag_check_postal:print_log('>>> 【地址】暂缺！！！ <= %s'%sheet_file)
         return ''
-    # if not search_names_phone(agent_text):
-    #     if flag_check_postal:
-    #         print_log('>!> %s => 手机格式不对,请自行修改'% agent_text)
     try:
         doc.save(parse_subpath(postal_path,sheet_file))
         print_log('>>> 已生成邮单 => %s'%sheet_file)
@@ -691,10 +789,11 @@ if flag_to_postal:
     codes = df_x['number'].astype(str)
     dates = df_x['datetime'].astype(str)
     print_log('>>> 生成邮单【%s条】范围: 【%s:%s】日期:【%s:%s】'%(count,codes.iloc[0],codes.iloc[-1],dates.iloc[0],dates.iloc[-1]))
-    # re_write_text(df_x.iloc[1])
-
+    del df_x,df_p,codes,dates
+    
 #%% main finish
 # if __name__ == "__main__":
+
 print_log('>>> 全部完成,可以回顾记录...任意键退出')
 
 

@@ -3,15 +3,15 @@
 
 ## Newest
 
-【2018-10-26】
+【2018-11-13】
 
-> * 修改复制判决书内人员逻辑，判断与OA人员差异，聪明复制
-> * 优化配置文件，尤其日期范围和条数
-> * 添加判决书和邮单日志记录FLAG
+> * 优化配置文件日期截取和打印
+> * 优化拷贝判决书上地址兼容性
+
 
 ## Guide
 
-法院人员批量生成邮单程序，减轻书记员负担
+Purposes：法院人员批量生成邮单程序，减轻书记员负担
 
 > * 灵感来自于法院人员发送案件生成寄件邮单麻烦，完成功能如下
 > * 技术:python-docx,pandas,StyleFrame,configparser
@@ -32,7 +32,7 @@
 
 法院OA系统表格【data_oa.xlsx】必须包含如下字段:
 
-**【承办人】会转换为【主审法官】**
+**【承办人】转换为【主审法官】**
 
 | 【立案日期】 | 【案号】 | 【原一审案号】 | 【承办人】 | 【当事人】 | 【其他】... |
 
@@ -42,23 +42,22 @@
 | 【立案日期】 | 【案号】 | 【原一审案号】 | 【主审法官】 | 【当事人】 | 【诉讼代理人】 | 【地址】 | 【其他】... |
 
 
-第一次运行会生成配置文件:
+第一次运行会生成conf.txt文件:
 
 ```python
 [config]
-data_xlsx = data_main.xlsx # 数据模板地址
-data_oa_xlsx = data_oa.xlsx # OA数据地址
-sheet_docx = sheet.docx # 邮单模板地址
-flag_rename_jdocs = True # 是否重命名判决书
-flag_fill_jdocs_adr = True # 是否填充判决书地址
-flag_fill_phone = False # 是否填充伪手机
-flag_append_oa = True # 是否导入OA数据
-flag_to_postal = True # 是否打印邮单
-flag_check_jdocs = False # 是否检查用户格式,输出提示信息
-flag_check_postal = False # 是否检查邮单格式,输出提示信息
-date_range =  #2018-09-01:2018-12-01 # 打印数据日期范围,比行数优先,去掉注释后读取,井号注释掉
-last_lines_oa = 50 # 导入OA数据的最后几行,当flag_append_oa开启才有效
-last_lines_data = 50 # 打印数据的最后几行
+data_xlsx = data_main.xlsx    # 数据模板地址
+data_oa_xlsx = data_oa.xlsx    # OA数据地址
+sheet_docx = sheet.docx    # 邮单模板地址
+flag_rename_jdocs = 1    # 是否重命名判决书
+flag_fill_jdocs_adr = 1    # 是否填充判决书地址
+flag_fill_phone = 0    # 是否填充伪手机
+flag_append_oa = 1    # 是否导入OA数据
+flag_to_postal = 1    # 是否打印邮单
+flag_check_jdocs = 1    # 是否检查用户格式,输出提示信息
+flag_check_postal = 0    # 是否检查邮单格式,输出提示信息
+date_range_oa_data = # 2018-01-01:2018-12-01    # 导入OA和打印数据日期范围,比行数优先,去掉注释后读取,井号注释掉
+last_lines_oa_data = 200    # 导入OA和打印数据的最后几行
 ```
 
 除了部分当事人地址自动填充外,填充律师规则如下:
