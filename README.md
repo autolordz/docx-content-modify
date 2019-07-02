@@ -3,13 +3,7 @@
 > * 法院法务自动化批量生成邮寄单据-Legal agency postal notes automatically generate app
 > * 给予法务邮递人员从法务OA数据表(excel)和公开的判决书(docx)提取当事人地址内容，批量直接生成邮单。 减轻相关员负担，尤其系列案，人员多地址多，手工输入地址重复性劳动太多，信息容易错漏
 
-> * 编译环境:  
-> * conda version : 4.6.14
-> * conda-build version : 3.17.8
-> * python version : 3.7.3.final.0
-> * Win10+Spyder3.3.4(自上向下运行,或者自己添加main来py运行)
-> * 使用编程技术:python-docx,pandas,StyleFrame,configparser  
-> * 打包程序:pyinstaller
+
 
 [![](https://img.shields.io/github/release/autolordz/docx-content-modify.svg?style=popout&logo=github&colorB=ff69b4)](https://github.com/autolordz/docx-content-modify/releases)
 [![](https://img.shields.io/badge/github-source-orange.svg?style=popout&logo=github)](https://github.com/autolordz/docx-content-modify)
@@ -19,13 +13,23 @@
 
 <!-- MarkdownTOC autoanchor="true" autolink="true" uri_encoding="false" -->
 
+- [环境](#环境)
 - [更新](#更新)
 - [内容](#内容)
 - [规则](#规则)
-- [具体使用方法](#具体使用方法)
+- [详细指南](#详细指南)
 - [Licence](#licence)
 
 <!-- /MarkdownTOC -->
+
+<a id="环境"></a>
+## 环境
+
+> * conda : 4.6.14
+> * python : 3.7.3.final.0
+> * Win10 + Spyder3.3.4 (打开脚本自上而下运行,或者自己添加main来py运行)
+> * 组件: python-docx,pandas,StyleFrame,configparser  
+> * 打包程序: pyinstaller 
 
 <a id="更新"></a>
 ## 更新
@@ -42,16 +46,16 @@
 ## 内容
 
 - [x] 按格式重命名判决书
-	- [x]提取判决书人员和地址信息
-	- [x]自动重命名为 **判决书_AAA号_原_BBB号.docx**
+	- [x] 提取判决书人员和地址信息
+	- [x] 自动重命名为 **判决书_AAA号_原_BBB号.docx**
 
 - [x] 拷贝OA表记录到Data表
-	- [x]按数量提取，按日期提取，按指定案号提取
-	- [x]整理Data表格式，对表中数据的变形，清洗，符合打印邮单的字段格式
-	- [x]填充判决书信息到Data表
+	- [x] 按数量提取，按日期提取，按指定案号提取
+	- [x] 整理Data表格式，对表中数据的变形，清洗，符合打印邮单的字段格式
+	- [x] 填充判决书信息到Data表
 
 - [x] 按照Data表输出寄送邮单
-	- [x]填充好所有信息，再次运行就能输出Data表指定邮单
+	- [x] 填充好所有信息，再次运行就能输出Data表指定邮单
 
 <a id="规则"></a>
 ## 规则
@@ -116,8 +120,8 @@ data_date_range =   # 指定打印数据日期范围示例:2018-09-01:2018-12-01
 data_last_lines = 10    # 指定打印最后行数,优先级3
 ```
 
-<a id="具体使用方法"></a>
-## 具体使用方法
+<a id="详细指南"></a>
+## 详细指南
 
 简称：  
 - [A表: data_oa.xlsx,OA表自己下载,这个只是参考](./demo_docs/data_oa.xlsx)
@@ -143,7 +147,7 @@ data_last_lines = 10    # 指定打印最后行数,优先级3
 5. 第二次运行(带【诉讼代理人】)  
 会重复 3.4.  3.5. 3.6.  
 
-6. 看不懂以上说明的可以直接下载最新的exe版本[win7/win10(32/64))](https://github.com/autolordz/docx-content-modify/releases/download/1.0.1/exe-win7win10-8962f68c.zip)
+6. 小白没有python环境，可以直接下载最新的exe版本，[win7/win10(32/64))](https://github.com/autolordz/docx-content-modify/releases/download/1.0.1/exe-win7win10-8962f68c.zip)，仍然需要设置config文件
 
 <a id="licence"></a>
 ## Licence

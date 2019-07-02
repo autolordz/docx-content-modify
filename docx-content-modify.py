@@ -75,7 +75,7 @@ Updated on Thu Jun 19 2019
 
 Depends on: python-docx,pandas,StyleFrame,configparser
 
-@author: Autoz
+@author: Autoz (autolordz@gmail.com)
 ''')
 #%% config and default values
 
@@ -824,7 +824,7 @@ if len(df) and flag_to_postal:
             df_x = sort_data(df_x,number)
 
         if len(df_x):
-            data_tmp = os.path.splitext(data_xlsx)[0]+"_temp.xlsx"
+            data_tmp = os.path.splitext(data_xlsx)[0]+"_tmp.xlsx"
             df_save = df_x.copy()
             df_save.columns = titles_trans(df_save.columns.tolist())
             try:df_save = save_adjust_xlsx(df_save,data_tmp,width=40)
