@@ -7,7 +7,7 @@ Created on Wed Sep 11 15:23:05 2019
 #%%
 import os,re,sys
 import pandas as pd
-from configure import write_config,read_config
+from dcm_configure import write_config,read_config
 
 #%%
 pd.set_option('max_colwidth',500)
@@ -40,7 +40,9 @@ def print_log(*args, **kwargs):
         print(*args, **kwargs, file=file)
 
 def input_exit(*args, **kwargs):
-    input(*args, **kwargs);sys.exit()
+    '''输入并退出'''
+    input(*args, **kwargs);
+    sys.exit()
     return 1
 
 if os.path.exists(logname):

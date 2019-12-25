@@ -8,46 +8,54 @@ Created on Wed Sep 11 15:11:39 2019
 import os,re
 from glob import glob
 import pandas as pd
-import util as ut
-from copyinfos import copy_rows_user_func
-from getjdocs import get_all_jdocs,rename_jdocs_codes
-from globalvar import *
+import dcm_util as ut
+from dcm_copy_infos import copy_rows_user_func
+from dcm_get_jdocs import get_all_jdocs,rename_jdocs_codes
+from dcm_globalvar import *
 
 #%%
 
 def df_oa_append(dfo):
     '''main fill OA data into df data'''
 
-    if flag_append_oa:
-        if not os.path.exists(data_oa_xlsx):
-            print_log('>>> 没有找到OA模板 %s...不处理！！'%data_oa_xlsx);return dfo
-        dfoa = pd.read_excel(data_oa_xlsx,sort=False)[titles_oa].fillna('') # only oa columns
-        df0 = dfo.copy()
+    if not flag_append_oa:
+        return dfo,[]
+    if not os.path.exists(data_oa_xlsx):
+        print_log('>>> 没有找到OA模板 %s...不处理！！'%data_oa_xlsx)
+        return dfo,[]
+    dfoa = pd.read_excel(data_oa_xlsx,sort=False)[titles_oa].dropna(how='all')  # only some columns
+    print('>>> OA数据共%s条'%len(dfoa))
 
-        if '适用程序' not in dfo.columns: dfo['适用程序'] = '' # 新建一栏用于系列案
-        print('>>> OA数据共%s条'%len(dfoa))
-        dfoa = df_make_subset(dfoa) # subset by columns
+    df0 = dfo.copy()
 
-        dfoa.rename(columns={'承办人':'主审法官'},inplace=True)
-        dfoa = df_read_fix(dfoa) # fix empty data columns
-        dfoa['add_index'] = 'new' ;  dfo['add_index'] = 'old'
+    if '适用程序' not in dfo.columns:
+        dfo['适用程序'] = '' # 新建一栏用于系列案
+    dfoa = df_make_subset(dfoa) # subset by n lines
+    dfoa = df_read_fix(dfoa) # fix empty data columns
 
-        ec = list(set(ut.expand_codes(dfo['案号'].to_list()))) # 展开案号
-        add =  dfoa[~dfoa['案号'].isin(ec)] # 新增条目
-        dfo = pd.concat([dfo,add],sort=1).fillna('')
-        dfo.sort_values(by=['立案日期','案号'],inplace=True)
-#        dfo.drop_duplicates(['立案日期','案号'],keep='first',inplace=True)
-        df_t0 = dfo[dfo['add_index'] == 'old'] ; df_t1 = dfo[dfo['add_index'] == 'new']
-        df_t1l = df_t1['立案日期'].to_list()
-        print_log('>>> 截取OA【%s条】-Data记录 old【%s条】-new【%s条】...'%(len(dfoa),len(df_t0),len(df_t1)))
-        if df_t1l:
-            print_log('>>> 实际添加【%s条】【%s】条共【%s】...'%(len(df_t1),
-                                                   str(df_t1l[0])+':'+str(df_t1l[-1]),
-                                                   len(dfo)))
-    save_df(df0,dfo)
-    return dfo,dfoa['原一审案号'].to_list()
+    dfoa['add_index'] = 'new'
+    dfo['add_index'] = 'old'
 
-def merge_group_cases(dfo):
+    ec = list(set(ut.expand_codes(dfo['案号'].to_list()))) # 展开案号
+    add =  dfoa[~dfoa['案号'].isin(ec)] # 新增条目
+    dfn = pd.concat([dfo,add],sort=1).fillna('')
+    dfn.sort_values(by=['立案日期','案号'],inplace=True)
+#        dfn.drop_duplicates(['立案日期','案号'],keep='first',inplace=True)
+
+    df_t0 = dfn[dfn['add_index'] == 'old']
+    df_t1 = dfn[dfn['add_index'] == 'new']
+    df_t1l = df_t1['立案日期'].to_list()
+    print_log('>>> 截取OA【%s条】-Data记录 old【%s条】-new【%s条】...'%(len(dfoa),len(df_t0),len(df_t1)))
+    if df_t1l:
+        print_log('>>> 实际添加【%s条】【%s】共【%s】条...'%(len(df_t1),
+                                               str(df_t1l[0])+':'+str(df_t1l[-1]),
+                                               len(dfn)))
+    save_df(df0,dfn) # 新旧对比保存
+    return dfn,dfoa['原一审案号'].to_list() # 添加n条OA的原一审案号
+
+def merge_group_cases(dfo,ocodes):
+
+    '''合并系列案 input dfo return dfn '''
 
     dfn = dfo.copy() # [dfo['适用程序'].str.len()>2]
     ds = dfo[['适用程序','当事人']].drop_duplicates().copy();ds # 依据'适用程序','当事人'定性系列案
@@ -69,6 +77,9 @@ def merge_group_cases(dfo):
                     ss['适用程序'] += done_tag
                 dfn = pd.concat([dfn[~dfn.isin(dgroup).all(1)], ss.to_frame().T]) #合并系列并过滤原来条目
     save_df(dfo,dfn)
+
+    dfn = dfn[dfn['原一审案号'].isin(ocodes)]; dfn # 合并后找回记录案号
+
     return dfn
 
 #%% df process steps
@@ -82,9 +93,10 @@ def fill_infos_func(dfj,dfo):
 
 def df_read_fix(df):
     '''fix codes remove error format 处理案号格式'''
-    df[['立案日期','案号','主审法官','当事人']] = df[['立案日期','案号','主审法官','当事人']].replace('',float('nan'))
-    df.dropna(how='any',subset=['立案日期','案号','主审法官','当事人'],inplace=True)
-    df['原一审案号'] = df['原一审案号'].fillna('')
+    df.rename(columns={'承办人':'主审法官'},inplace=True)
+    x_col_tags = ['立案日期','案号','主审法官','当事人']
+    df.dropna(how='any',subset=x_col_tags,inplace=True)
+    df = df.fillna('')
     df[['案号','原一审案号']] = df[['案号','原一审案号']].applymap(ut.case_codes_fix)
     return df
 
@@ -110,7 +122,7 @@ def save_df(df_old,df_new): # 内容相同就不管
         print_log('\n>>> 内容没变,不用保存 ..\n')
         return 0
     except Exception: # 不同则保存
-        ut.save_adjust_xlsx(df_new,data_xlsx)
+        r = ut.save_adjust_xlsx(df_new,data_xlsx) ; print(r)
         return 1
 
 def df_make_subset(df):
@@ -154,4 +166,6 @@ def df_make_subset(df):
     elif d_lines:
         df = df.tail(d_lines)
     return df
+
+
 

@@ -9,13 +9,14 @@ Created on Wed Sep 11 12:08:08 2019
 #%%
 import re
 from collections import Counter
-from util import split_list,user_to_list,save_adjust_xlsx
-from globalvar import *
+from dcm_util import split_list,user_to_list,save_adjust_xlsx
+from dcm_globalvar import *
 
 #%%
 
 def copy_users_compare(jrow,df,errs=list('    ')):
-    '''copy users and check users completement
+    '''
+    对比OA和data的用户记录来填充信息
     errs=['【OA无用户记录】','【用户错别字】','【字段重复】','【系列案】']
     如下对比：
     不相交，OA无用户记录
@@ -77,7 +78,8 @@ def copy_users_compare(jrow,df,errs=list('    ')):
 
 
 def copy_rows_adr1(x,n_adr):
-    ''' copy jdocs address to address column
+    '''
+        复制判决书内容到地址栏
         格式:['当事人','诉讼代理人','地址','new_adr','案号']
         同时排除已有代理人的信息
     '''
@@ -99,11 +101,11 @@ def copy_rows_adr1(x,n_adr):
             print_log('>>> 【%s】成功复制判决书地址=>【%s】'%(codes,adr))
     return adr
 
-address_tmp_xlsx = 'address_tmp.xlsx'
-
 def copy_rows_user_func(dfj,dfo):
 
-    '''copy users line regard adr user'''
+    '''
+    根据地址用户，复制每行用户信息
+    '''
     errs = ['【OA无用户记录】','【用户错别字】','【字段重复】','【系列案】']
 
     dfo['判决书源号'] = ''
@@ -129,5 +131,5 @@ def copy_rows_user_func(dfj,dfo):
                         find_source() ; break
                     else: pass
     dfj = dfj.fillna('')
-    save_adjust_xlsx(dfj,address_tmp_xlsx,textfit=('判决书源号','new_adr')) # 保存临时提取信息
+    save_adjust_xlsx(dfj,'address_tmp.xlsx',textfit=('判决书源号','new_adr')) # 保存临时提取信息
     return dfo

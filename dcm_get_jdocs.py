@@ -9,8 +9,9 @@ import os,re
 from glob import glob
 import pandas as pd
 from docx import Document
-from util import check_codes,case_codes_fix,split_list,parse_subpath
-from globalvar import *
+#%%
+from dcm_util import check_codes,case_codes_fix,split_list,parse_subpath
+from dcm_globalvar import *
 
 #%% 读取判决书jdocs代码
 

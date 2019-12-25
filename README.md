@@ -1,7 +1,8 @@
 ## 邮单自动批量生成器
 
 > * 法院法务自动化批量生成邮寄单据-Legal agency postal notes automatically generate app
-> * 给予法务邮递人员从法务OA数据表(excel)和公开的判决书(docx)提取当事人地址内容，批量直接生成邮单。 减轻相关员负担，尤其系列案，人员多地址多，手工输入地址重复性劳动太多，信息容易错漏
+> * 给予法务邮递人员从法务OA数据表(excel)和公开的判决书(docx)，提取'当事人'的地址信息等相关字段，组合成新数据表，根据这个数据表批量直接生成寄送当事人的邮单。
+> * 以此减轻相关员负担，尤其系列案，人员多地址多，手工输入地址重复性劳动太多，信息容易错漏
 
 [![](https://img.shields.io/github/release/autolordz/docx-content-modify.svg?style=popout&logo=github&colorB=ff69b4)](https://github.com/autolordz/docx-content-modify/releases)
 [![](https://img.shields.io/badge/github-source-orange.svg?style=popout&logo=github)](https://github.com/autolordz/docx-content-modify)
@@ -10,12 +11,16 @@
 ## 环境
 
 > * conda : 4.6.14
-> * python : 3.7.3.final.0
+> * python : 3.7.4
 > * Win10 + Spyder3.3.4 (打开脚本自上而下运行,或者自己添加main来py运行)
-> * 组件: python-docx,pandas,StyleFrame,configparser  
+> * 组件: numpy pandas python-docx StyleFrame  
 > * 打包程序: pyinstaller 
 
 ## 更新
+
+【2019-12-25】
+
+> * 更新代码暂时去掉合并系列案功能，以后再启用
 
 【2019-9-19】
 
@@ -94,7 +99,7 @@ flag_check_jdocs = 0    # 是否检查用户格式,输出提示信息
 flag_check_postal = 0    # 是否检查邮单格式,输出提示信息
 data_case_codes =    # 指定打印案号,可接多个,示例:AAA号,BBB号,优先级1
 data_date_range =   # 指定打印数据日期范围示例:2018-09-01:2018-12-01,优先级2
-data_last_lines = 3    # 指定打印最后行数,优先级3
+data_last_lines = 10    # 指定打印最后行数,优先级3
 ```
 
 ## 详细指南
@@ -123,7 +128,7 @@ data_last_lines = 3    # 指定打印最后行数,优先级3
 5. 第二次运行(带【诉讼代理人】)  
 会重复 3.4.  3.5. 3.6.  
 
-6. 小白没有python环境，可以直接下载最新的exe版本，使用前先配置conf.txt文件
+6. 小白没有python环境，可以直接下载最新的exe版本，使用前先配置conf.txt文件  
 
 ## Licence
 

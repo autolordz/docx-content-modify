@@ -7,7 +7,7 @@ Created on Wed Sep 11 11:29:47 2019
 
 import os,re,datetime
 from StyleFrame import StyleFrame, Styler
-from globalvar import *
+from dcm_globalvar import *
 
 #%% base utils
 
@@ -64,7 +64,7 @@ def parse_datetime(date):
     return date
 
 def titles_switch(df_list):
-    '''switch titles between Chinese and English'''
+    '''switch titles between Chinese and English, input cn return en'''
     titles_cn2en = dict(zip(titles_cn, titles_en))
     titles_en2cn = dict(zip(titles_en, titles_cn))
     trans_cn_en = list(map(lambda x,y:(titles_cn2en if y else titles_en2cn).get(x),
@@ -72,7 +72,7 @@ def titles_switch(df_list):
     return trans_cn_en
 
 def titles_trans_columns(df,titles):
-    '''sub-replace columns titles you want'''
+    '''replace columns titles example: input cn return en'''
     titles_rest = df.drop(titles,axis=1).columns.tolist()
     df = df[titles + titles_rest]
     df.columns = titles_switch(titles) + titles_rest
@@ -90,6 +90,8 @@ isStyleFrame = 1
 def save_adjust_xlsx(df,file,textfit=('当事人', '诉讼代理人', '地址'),width=60):
     '''save and re-adjust excel format
     with StyleFrame or not
+    return 1 save success
+    textfit 栏目固定宽度
     '''
     try:
         print_log('>>> 保存文件 => 文件名 \'%s\''%file)
@@ -98,7 +100,7 @@ def save_adjust_xlsx(df,file,textfit=('当事人', '诉讼代理人', '地址'),
             StyleFrame.A_FACTOR = 5
             StyleFrame.P_FACTOR = 1.2
             sf = StyleFrame(df,Styler(wrap_text = False, shrink_to_fit=True, font_size= 12))
-            if('add_index' in df.columns.tolist()):
+            if('add_index' in df.columns.tolist()): # add_index 改为黄色
                 sf.apply_style_by_indexes(indexes_to_style=sf[sf['add_index'] == 'new'],
                                           styler_obj=Styler(bg_color='yellow'),
                                           overwrite_default_style=False)
@@ -115,7 +117,8 @@ def save_adjust_xlsx(df,file,textfit=('当事人', '诉讼代理人', '地址'),
             df.to_excel(file,index=0)
     except PermissionError:
         print_log('！！！！！%s被占用，不能覆盖记录！！！！！'%file)
-    return df
+        return '保存失败 %s'%file
+    return '保存成功 %s'%file
 
 def check_time(dlist):
     '''split and check configure times'''
