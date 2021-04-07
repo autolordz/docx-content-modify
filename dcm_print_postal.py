@@ -52,10 +52,10 @@ def fill_postal_save(x):
     if not agent_text:
         if flag_check_postal:print_log('>>> 【代理人】暂缺！！！ <= %s'%sheet_file)
         return ''
-
-    if not address_text:
-        if flag_check_postal:print_log('>>> 【地址】暂缺！！！ <= %s'%sheet_file)
-        return ''
+#
+#    if not address_text:
+#        if flag_check_postal:print_log('>>> 【地址】暂缺！！！ <= %s'%sheet_file)
+#        return ''
     try:
         doc.save(ut.parse_subpath(postal_path,sheet_file))
         print_log('>>> 已生成邮单 => %s'%sheet_file)

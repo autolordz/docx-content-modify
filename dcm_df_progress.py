@@ -16,15 +16,18 @@ from dcm_globalvar import *
 #%%
 
 def df_oa_append(dfo):
-    '''main fill OA data into df data'''
+    '''
+    添加OA数据主方法
+    input df; return df,案号
+    '''
 
     if not flag_append_oa:
         return dfo,[]
     if not os.path.exists(data_oa_xlsx):
-        print_log('>>> 没有找到OA模板 %s...不处理！！'%data_oa_xlsx)
+        print_log('>>> 没有找到OA文件 %s...不处理！！'%data_oa_xlsx)
         return dfo,[]
-    dfoa = pd.read_excel(data_oa_xlsx,sort=False)[titles_oa].dropna(how='all')  # only some columns
-    print('>>> OA数据共%s条'%len(dfoa))
+    dfoa = pd.read_excel(data_oa_xlsx)[titles_oa].dropna(how='all')  # only some columns
+    print('>>> 有OA数据共%s条'%len(dfoa))
 
     df0 = dfo.copy()
 
@@ -33,11 +36,11 @@ def df_oa_append(dfo):
     dfoa = df_make_subset(dfoa) # subset by n lines
     dfoa = df_read_fix(dfoa) # fix empty data columns
 
-    dfoa['add_index'] = 'new'
-    dfo['add_index'] = 'old'
+    dfoa['add_index'] = 'new' # OA的新案件
+    dfo['add_index'] = 'old' # 原来的旧案件
 
-    ec = list(set(ut.expand_codes(dfo['案号'].to_list()))) # 展开案号
-    add =  dfoa[~dfoa['案号'].isin(ec)] # 新增条目
+    expandcases = list(set(ut.expand_codes(dfo['案号'].to_list()))) # 展开案号,普通案号不用展开,保证唯一
+    add =  dfoa[~dfoa['案号'].isin(expandcases)] # 新增条目
     dfn = pd.concat([dfo,add],sort=1).fillna('')
     dfn.sort_values(by=['立案日期','案号'],inplace=True)
 #        dfn.drop_duplicates(['立案日期','案号'],keep='first',inplace=True)
@@ -50,13 +53,14 @@ def df_oa_append(dfo):
         print_log('>>> 实际添加【%s条】【%s】共【%s】条...'%(len(df_t1),
                                                str(df_t1l[0])+':'+str(df_t1l[-1]),
                                                len(dfn)))
-    save_df(df0,dfn) # 新旧对比保存
+    save_df_diff(df0,dfn) # 新旧对比保存
     return dfn,dfoa['原一审案号'].to_list() # 添加n条OA的原一审案号
 
-def merge_group_cases(dfo,ocodes):
-
-    '''合并系列案 input dfo return dfn '''
-
+def merge_group_cases(dfo,ocodes): 
+    '''
+    合并系列案方法（暂时不用）
+    input dfo; return dfn
+    '''
     dfn = dfo.copy() # [dfo['适用程序'].str.len()>2]
     ds = dfo[['适用程序','当事人']].drop_duplicates().copy();ds # 依据'适用程序','当事人'定性系列案
     for tag1,tag2 in zip(ds['适用程序'].to_list(),ds['当事人'].to_list()): # ds是系列案标签和内容
@@ -76,10 +80,8 @@ def merge_group_cases(dfo,ocodes):
                     if not ss['适用程序']: ss['适用程序'] = '、'.join(sn)
                     ss['适用程序'] += done_tag
                 dfn = pd.concat([dfn[~dfn.isin(dgroup).all(1)], ss.to_frame().T]) #合并系列并过滤原来条目
-    save_df(dfo,dfn)
-
+    save_df_diff(dfo,dfn)
     dfn = dfn[dfn['原一审案号'].isin(ocodes)]; dfn # 合并后找回记录案号
-
     return dfn
 
 #%% df process steps
@@ -92,12 +94,12 @@ def fill_infos_func(dfj,dfo):
 
 
 def df_read_fix(df):
+    '''修正读取内容'''
     '''fix codes remove error format 处理案号格式'''
-    df.rename(columns={'承办人':'主审法官'},inplace=True)
-    x_col_tags = ['立案日期','案号','主审法官','当事人']
-    df.dropna(how='any',subset=x_col_tags,inplace=True)
-    df = df.fillna('')
-    df[['案号','原一审案号']] = df[['案号','原一审案号']].applymap(ut.case_codes_fix)
+    df.rename(columns={'承办人':'主审法官'},inplace=True) #更换法官字段
+    df.dropna(how='any',subset=['立案日期','案号','主审法官','当事人'],inplace=True) #按字段保持唯一
+    df = df.fillna('') # 填充nan
+    df[['案号','原一审案号']] = df[['案号','原一审案号']].applymap(ut.case_codes_fix) #修正案号格式，对两列所有元素都处理
     return df
 
 def df_fill_infos(dfo):
@@ -110,10 +112,10 @@ def df_fill_infos(dfo):
     dfn = dfo.copy()
     dfn = fill_infos_func(dfj,dfn)
     if flag_fill_jdocs_infos:
-        save_df(dfo,dfn)
+        save_df_diff(dfo,dfn)
     return dfn
 
-def save_df(df_old,df_new): # 内容相同就不管
+def save_df_diff(df_old,df_new): # 内容相同就不管
     '''保存并对比记录'''
     try:
         df_old = ut.titles_resort(df_old,titles_main)
@@ -129,8 +131,8 @@ def df_make_subset(df):
 
     '''
     cut orgin data into subset by conditions
-    d_codes: 多个指定案号例如: （2018）哈哈1234号,（2018）哈哈3333号
-    d_range: 2019-08-13：2019-08-27
+    d_codes: 案号范围 多个指定案号例如 : （2018）哈哈1234号,（2018）哈哈3333号
+    d_range: 时间范围 2019-08-13：2019-08-27
     '''
     d_codes,d_range,d_lines = data_case_codes,data_date_range,0
     if data_last_lines:  d_lines = int(data_last_lines)

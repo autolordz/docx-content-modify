@@ -24,7 +24,7 @@ def df_transform_stream(df):
                                            df['number'].to_list()))
 
     if len(df) and flag_to_postal:
-        try:
+#        try:
             print_log('\n>>> 开始生成新数据 data_main_temp... ')
             '''获取 datetime|number'''
             number = df[titles_en[:2]]
@@ -45,7 +45,7 @@ def df_transform_stream(df):
             adr = df['address']
 
             if all(opt):
-                print_log('>>> 有【代理人】和【地址】...正在处理...')
+                print_log('>>> 有【诉讼代理人】和【地址】...正在处理...')
                 adr = make_adr(adr,fix_aname=user['uname'].tolist())
                 agent = make_agent(agent,fix_aname=adr['clean_aname'].tolist()) #获取代理人
                 usr_agent = merge_user(user,agent)
@@ -60,14 +60,14 @@ def df_transform_stream(df):
                 df_x = reclean_data(adr)
                 df_x = sort_data(df_x,number)
             elif opt.aname:
-                print_log('>>> 只有【代理人】...正在处理...')
+                print_log('>>> 只有【诉讼代理人】...正在处理...')
                 agent = make_agent(agent)
                 agent = merge_user(user,agent)
                 agent = agent.assign(address='')
                 df_x = reclean_data(agent)
                 df_x = sort_data(df_x,number)
             else:
-                print_log('>>> 缺失【代理人】和【地址】...正在处理...')
+                print_log('>>> 缺失【诉讼代理人】和【地址】...正在处理...')
                 agent_adr.index.name = 'level_0'
                 agent_adr.reset_index(inplace=True)
                 df_x = pd.merge(user,agent_adr,how='left',on=['level_0']).fillna('')
@@ -78,9 +78,9 @@ def df_transform_stream(df):
                 df_save = df_x.copy()
                 df_save.columns = ut.titles_switch(df_save.columns.tolist())
                 df_save = ut.save_adjust_xlsx(df_save,data_tmp,width=40)
-
-        except Exception as e:
-            input_exit('>>> 错误 \'%s\' 生成数据失败,请检查源 \'%s\' 文件...退出...'%(e,data_xlsx))
+#                print_log('----->'%ret)
+#        except Exception as e:
+#            input_exit('>>> 错误 \'%s\' 生成数据失败,请检查源 \'%s\' 文件...退出...'%(e,data_xlsx))
     return df_x
 
 
@@ -104,7 +104,7 @@ def clean_rows_adr(adr):
         adr = '，'.join(list(filter(None, y)))
     return adr
 
-def make_adr(adr,fix_aname=[]):
+def make_adr(adr,fix_aname=[]): #fix_aname = clean_aname
     '''
     clean_aname:合并标识,此处如果没律师，则代理人就是自己
     fix_aname:修正名字错误
@@ -124,15 +124,22 @@ def make_adr(adr,fix_aname=[]):
 
 def make_agent(agent,fix_aname=[]):
     '''
+    agent = '张三(曾用名张五)/律师张二三_123123_李三四_123123'
+    
     fix_aname:修正名字错误,假如律师(aname)有多个,则选择第一个律师作为合并标识(clean_aname)，注意没有律师的合并就是自己(uname)做代理人
     Returns:
        level_0       uname            aname              clean_aname
-    0       44         张三          A律师_123213123                A律师
+    0       44         张三          A律师_123123                A律师
     1       44         李四
-    2       44         王五       B律师_123123132123、C律师_123123   B律师
+    2       44         王五       B律师_123123、C律师_123123   B律师
     '''
+    
+    df = ut.titles_trans_columns(df,titles_cn);df # 中译英方便后面处理
+    agent = df['aname']
     agent = agent[agent != '']
     agent = agent.str.strip().str.split(r'[,，。]',expand=True).stack() #Series
+#    agent.str.strip().str.split(r'[,，。]',expand=True).stack() 
+#    agent.str.strip().str.split(r'\/',expand=True).fillna('')
     agent = agent.str.strip().str.split(r'\/',expand=True).fillna('') #DataFrame
     agent.columns = ['uname','aname']
     agent['clean_aname'] = agent['aname'].str.strip().apply(lambda x: clean_rows_aname(x,fix_aname))
@@ -179,3 +186,9 @@ def df_check_format(x):
     if x['address']!='' and not re.search(r'\/地址[:：]',x['address']):
         ut.print_log('>>> 记录\'%s\'---- 【地址】格式 \'%s\' 不正确,如无请留空,请自行修改...'%(x['number'],x['address']))
     return x
+
+def main():
+    print('1232')
+    
+if __name__ == '__main__':
+    main()

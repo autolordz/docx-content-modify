@@ -20,16 +20,35 @@ titles_main = ['立案日期','适用程序','案号','原一审案号','判决�
 titles_oa = ['立案日期','案号','原一审案号','承办人','当事人','适用程序']
 titles_cn = ['立案日期','案号','当事人','诉讼代理人','地址']
 titles_en = ['datetime','number','uname','aname','address']
-path_names_clean = re.compile(r'[^A-Za-z\u4e00-\u9fa5（）()：]') # remain only name including old name 包括括号冒号
-search_names_phone = lambda x: re.search(r'[\w（）()：:]+\_\d+',x)  # phone numbers
-path_code_ix = re.compile(r'[(（][0-9]+[)）].*?号') # case numbers
+path_names_clean = re.compile(r'[^A-Za-z\u4e00-\u9fa5（）()：]') # 保留用户名和旧名 包括括号冒号
+search_names_phone = lambda x: re.search(r'[\w（）()：:]+\_\d+',x)  # tel numbers 电话号
+path_code_ix = re.compile(r'[(（][0-9]+[)）].*?号') # case numbers 案号
 postal_path = os.path.join('.','postal')
 jdocs_path = os.path.join('.','jdocs')
-adr_tag = '/地址：'
+adr_tag = '/地址：' # 地址标识，分割用
 done_tag = '_集合'
 usrtag = r'申请人|被申请人|原告|被告|原审被告|上诉人|被上诉人|第三人|原审诉讼地位|申请再审人|被申请再审人' # 当事人抬头标识
 
+#    dr = dict((reversed(item) for item in dd.items()))
+#%%
 
+def getcolums_en(df_columns):
+    dd = dict(zip(titles_cn,titles_en))
+    return list(filter(None,(dd.get(x) for x in df_columns.tolist())))
+
+
+# sample
+#y = getcolums_en(df.columns)
+#
+#from functools import reduce
+#reduce((lambda x,y: x + 2), [1, 1, 1, 1])
+#
+#fib = lambda n:reduce(lambda x,n:[x[1],x[0]+x[1]], range(n),[0,1])[0]
+#for x in range(1,100):
+#    print(fib(x))
+
+
+#.copy()
 #%% print_log log
 
 logname = 'log.txt'

@@ -6,7 +6,7 @@ Created on Wed Sep 11 11:29:47 2019
 """
 
 import os,re,datetime
-from StyleFrame import StyleFrame, Styler
+from styleframe import StyleFrame, Styler
 from dcm_globalvar import *
 
 #%% base utils
@@ -20,7 +20,7 @@ def user_to_list(u):
     -> ['张xx', '李xx', '罗xx（又名罗aa）']
     '''
     u = split_list(r'[:、,，]',u)
-    return [x for x in u if not re.search(usrtag,x)]
+    return (x for x in u if not re.search(usrtag,x)) #生成器
 
 def check_codes(x):
     '''check cases codes here'''
@@ -31,8 +31,8 @@ def case_codes_fix(x):
     Usage: 'dsfdsf(2018)中文中文248号sdfsdf' -> '（2018）中文中文248号'
     '''
     x = str(x)
-    x = re.search(path_code_ix.pattern+r'|$',x).group().strip().replace(' ','')
-    x = x.replace('(','（').replace(')','）')
+    x = re.search(path_code_ix.pattern+r'|$',x).group().strip() \
+    .replace('(','（').replace(')','）').replace(' ','') 
     return x
 
 def expand_codes(xxx):
@@ -79,7 +79,7 @@ def titles_trans_columns(df,titles):
     return df
 
 def titles_resort(df,titles):
-    '''resort titles with orders'''
+    '''重新排列字段'''
     titles_rest = df.drop(titles,axis=1).columns.tolist()
     return df[titles + titles_rest]
 

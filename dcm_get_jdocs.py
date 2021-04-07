@@ -86,9 +86,9 @@ def get_all_jdocs(docs):
     '''主要获取的入口'''
     numlist=[]; nadr = []
     for doc in docs:
-        codes,adrs = get_jdocs_infos(doc)
+        codes,adrs = get_jdocs_infos(doc) # 遍历每份文档 找到内容
         if codes:
-            rename_jdoc_x(doc,codes)
+            rename_jdoc_x(doc,codes) # 有号码就重命名
         numlist.append(codes)
         nadr.append(adrs)
         if flag_check_jdocs and codes:
@@ -97,7 +97,7 @@ def get_all_jdocs(docs):
     return pd.DataFrame({'判决书源号':numlist,'new_adr':nadr})
 
 
-def rename_jdocs_codes_x(d,r,old_codes):
+def rename_jdocs_codes_x(d,r,old_codes): # for 的子内容
     '''add jdoc current case codes for reference 判决书改名，包括源案号'''
     if str(r[old_codes]) in str(d):
         nd = os.path.join(os.path.split(d)[0],'判决书_'+str(r['案号']) +'_原_'+ str(r[old_codes]) + '.docx')
@@ -114,14 +114,15 @@ def rename_jdocs_codes_x(d,r,old_codes):
     return d
 
 def rename_jdocs_codes(dfo):
+    print('正在重命名判决书'.center(30, '*'))
     '''rename jdocs with new codes'''
     old_codes='判决书源号'
-    docs = glob(parse_subpath(jdocs_path,'判决书_*.docx'))
-    df = dfo[dfo[old_codes] != '']
+    docs = glob(parse_subpath(jdocs_path,'判决书_*.docx')) # 找到文件
+    df = dfo[dfo[old_codes] != ''] # 表格编号
     if docs:
         for doc in docs:
             for (i,dfr) in df.iterrows():
                 if check_codes(dfr[old_codes]) and str(dfr[old_codes]) in doc:
-                    rename_jdocs_codes_x(doc,dfr,old_codes)
+                    rename_jdocs_codes_x(doc,dfr,old_codes) # 编号对应就 重命名
                     break
     return None

@@ -38,10 +38,13 @@ from dcm_df_transform import make_adr,make_agent,merge_user,merge_usr_agent_adr
 from dcm_df_transform import reclean_data,sort_data
 from dcm_print_postal import fill_postal_save
 
+
 #%%
 import datetime
 
 print('''
+邮单机，自动填充判决书
+
 Postal Notes Automatically Generate App
 
 Updated on %s
@@ -69,22 +72,26 @@ if not os.path.exists(data_xlsx):
     r = ut.save_adjust_xlsx(pd.DataFrame(columns=titles_main),data_xlsx,width=40)
     print_log('>>> %s 文件不存在...重新生成'%(data_xlsx) + r)
 
-#import sys
-#sys.exit()
 
-#%%
+#try:
+#%% 具体
 print('读取数据'.center(30, '*'))
-df = pd.read_excel(data_xlsx,sort=False).dropna(how='all')  # 删除全空的行
-df = df_read_fix(df);df # fix empty data columns
+df = pd.read_excel(data_xlsx).dropna(how='all');df  # 删除全空的行
+
+#df = df_read_fix(df);df # fix empty data columns
 
 print('新增OA记录'.center(30, '*'))
-df,ocodes = df_oa_append(df) # append oa data and sava # 新增OA记录
+#df,ocodes = df_oa_append(df);df # append oa data and sava # 新增OA记录
 
 #print('合并系列案逻辑部分'.center(30, '*'))
-#df = merge_group_cases(df,ocodes);df # 合并系列案逻辑部分 and save
+#df = merge_group_cases(df,ocodes);df # 合并系列案逻辑部分 and save 
 
 print('填充判决书内容'.center(30, '*'))
-df = df_fill_infos(df) # 填充判决书内容 # filled and save
+#df = df_fill_infos(df);df # 填充判决书内容 # filled and save
+
+
+#%%
+df = df[1:2]
 
 #%% df tramsfrom stream 数据转换流程
 print('数据转换流程'.center(30, '*'))
@@ -92,11 +99,14 @@ df_print = df_transform_stream(df)
 
 #%%
 print('邮单输出过程'.center(30, '*'))
+#except Exception as e:
+#    print_log(">>>> 输出异常: %s"%e)
 
+#%%
 if len(df) and flag_to_postal:
     if not os.path.exists(sheet_docx):
         input_exit('>>> 没有找到邮单模板 %s...任意键退出'%sheet_docx)
-    df_ret = df_print.apply(fill_postal_save,axis = 1) # 重复处理并保存邮单
+    df_ret = df_print.apply(fill_postal_save,axis = 1) # 重复处理并保存邮单 实际等于for循环
 
     # 计算邮单并显示
     count = len(df_ret[df_ret != ''])
