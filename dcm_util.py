@@ -8,19 +8,29 @@ Created on Wed Sep 11 11:29:47 2019
 import os,re,datetime
 from styleframe import StyleFrame, Styler
 from dcm_globalvar import *
+locals().update(var.to_dict()) # 设置读取的全局变量
 
 #%% base utils
 
 def split_list(regex,L):
     return list(filter(None,re.split(regex,L)))
 
+#def user_to_list(u):
+#    '''get name list from user string
+#    Usage: '申请人:张xx, 被申请人:李xx, 原审被告:罗xx（又名罗aa）'
+#    -> ['张xx', '李xx', '罗xx（又名罗aa）']
+#    '''
+#    u = split_list(r'[:、,，]',u)
+#    return (x for x in u if not re.search(usrtag,x)) #生成器
+
 def user_to_list(u):
     '''get name list from user string
-    Usage: '申请人:张xx, 被申请人:李xx, 原审被告:罗xx（又名罗aa）'
-    -> ['张xx', '李xx', '罗xx（又名罗aa）']
+    Usage: '[再审申请人]蔡XX/[被申请人]关XX'
+    -> ['蔡XX', '关XX']
     '''
-    u = split_list(r'[:、,，]',u)
-    return (x for x in u if not re.search(usrtag,x)) #生成器
+    u = split_list(r'[:、,，\[\]\/]',u)
+    return [x for x in u if not re.search(usrtag,x)] #生成器
+
 
 def check_codes(x):
     '''check cases codes here'''
@@ -96,26 +106,28 @@ def save_adjust_xlsx(df,file,textfit=('当事人', '诉讼代理人', '地址'),
     try:
         print_log('>>> 保存文件 => 文件名 \'%s\''%file)
         df = df.reset_index(drop='index').fillna('')
-        if isStyleFrame:
-            StyleFrame.A_FACTOR = 5
-            StyleFrame.P_FACTOR = 1.2
-            sf = StyleFrame(df,Styler(wrap_text = False, shrink_to_fit=True, font_size= 12))
-            if('add_index' in df.columns.tolist()): # add_index 改为黄色
-                sf.apply_style_by_indexes(indexes_to_style=sf[sf['add_index'] == 'new'],
-                                          styler_obj=Styler(bg_color='yellow'),
-                                          overwrite_default_style=False)
-                sf.apply_column_style(cols_to_style = textfit,
-                                      width = width,
-                                      styler_obj=Styler(wrap_text=False,shrink_to_fit=True))
-            else:
-                sf.set_column_width_dict(col_width_dict={textfit: width})
-            if len(df):
-                sf.to_excel(file,best_fit=sf.data_df.columns.difference(textfit).tolist()).save()
-            else:
-                sf.to_excel(file).save()
-        else:
-            df.to_excel(file,index=0)
-    except PermissionError:
+        df.to_excel(file,index=0)
+
+#        if isStyleFrame:
+#            StyleFrame.A_FACTOR = 5
+#            StyleFrame.P_FACTOR = 1.2
+#            sf = StyleFrame(df,Styler(wrap_text = False, shrink_to_fit=True, font_size= 12))
+#            if('add_index' in df.columns.tolist()): # add_index 改为黄色
+#                sf.apply_style_by_indexes(indexes_to_style=sf[sf['add_index'] == 'new'],
+#                                          styler_obj=Styler(bg_color='yellow'),
+#                                          overwrite_default_style=False)
+#                sf.apply_column_style(cols_to_style = textfit,
+#                                      width = width,
+#                                      styler_obj=Styler(wrap_text=False,shrink_to_fit=True))
+#            else:
+#                sf.set_column_width_dict(col_width_dict={textfit: width})
+#            if len(df):
+#                sf.to_excel(file,best_fit=sf.data_df.columns.difference(textfit).tolist()).save()
+#            else:
+#                sf.to_excel(file).save()
+#        else:
+#            df.to_excel(file,index=0)
+    except Exception as e:
         print_log('！！！！！%s被占用，不能覆盖记录！！！！！'%file)
         return '保存失败 %s'%file
     return '保存成功 %s'%file

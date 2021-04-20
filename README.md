@@ -12,7 +12,7 @@
 
 > * conda : 4.6.14
 > * python : 3.7.4
-> * Win10 + Spyder3.3.4 (打开脚本自上而下运行,或者自己添加main来py运行)
+> * Win10 + Spyder 3.3.6 (打开脚本自上而下运行,或者自己添加main来cmd运行)
 > * 组件: numpy pandas python-docx StyleFrame  
 > * 打包程序: pyinstaller 
 

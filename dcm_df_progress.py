@@ -13,6 +13,8 @@ from dcm_copy_infos import copy_rows_user_func
 from dcm_get_jdocs import get_all_jdocs,rename_jdocs_codes
 from dcm_globalvar import *
 
+locals().update(var.to_dict()) # 设置读取的全局变量
+
 #%%
 
 def df_oa_append(dfo):
@@ -21,8 +23,8 @@ def df_oa_append(dfo):
     input df; return df,案号
     '''
 
-    if not flag_append_oa:
-        return dfo,[]
+#    if not flag_append_oa:
+#        return dfo,[]
     if not os.path.exists(data_oa_xlsx):
         print_log('>>> 没有找到OA文件 %s...不处理！！'%data_oa_xlsx)
         return dfo,[]
@@ -42,7 +44,7 @@ def df_oa_append(dfo):
     expandcases = list(set(ut.expand_codes(dfo['案号'].to_list()))) # 展开案号,普通案号不用展开,保证唯一
     add =  dfoa[~dfoa['案号'].isin(expandcases)] # 新增条目
     dfn = pd.concat([dfo,add],sort=1).fillna('')
-    dfn.sort_values(by=['立案日期','案号'],inplace=True)
+    dfn.sort_values(by=['案号'],inplace=True)
 #        dfn.drop_duplicates(['立案日期','案号'],keep='first',inplace=True)
 
     df_t0 = dfn[dfn['add_index'] == 'old']
@@ -54,6 +56,10 @@ def df_oa_append(dfo):
                                                str(df_t1l[0])+':'+str(df_t1l[-1]),
                                                len(dfn)))
     save_df_diff(df0,dfn) # 新旧对比保存
+    
+#    dfn.reset_index(inplace=True)
+#    dfn.drop(['index'],axis=1) 
+
     return dfn,dfoa['原一审案号'].to_list() # 添加n条OA的原一审案号
 
 def merge_group_cases(dfo,ocodes): 
@@ -111,8 +117,7 @@ def df_fill_infos(dfo):
     if len(dfj) == 0: print_log('>>> 没有找到判决书...不处理！！') ; return dfo
     dfn = dfo.copy()
     dfn = fill_infos_func(dfj,dfn)
-    if flag_fill_jdocs_infos:
-        save_df_diff(dfo,dfn)
+    save_df_diff(dfo,dfn)
     return dfn
 
 def save_df_diff(df_old,df_new): # 内容相同就不管

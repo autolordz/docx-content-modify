@@ -108,3 +108,8 @@ venv.bak/
 *.exe
 tmp/
 exe-win7-tmp/
+
+*.doc
+*.docx
+*.xlsx
+*.xls

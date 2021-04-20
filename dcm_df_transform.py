@@ -9,6 +9,8 @@ import pandas as pd
 #%%
 import dcm_util as ut
 from dcm_globalvar import *
+locals().update(var.to_dict()) # 设置读取的全局变量
+
 #%%
 
 def df_transform_stream(df):
@@ -34,10 +36,14 @@ def df_transform_stream(df):
             '''获取所有用户名包括曾用名'''
             user = df['uname']
             user = user[user != '']
-            user = user.str.strip().str.split(r'[,，。]',expand=True).stack() # divide user
-            user = user.str.strip().str.split(r'[:]',expand=True)# divide character
-            user = user[1].str.strip().str.split(r'[、]',expand=True).stack().to_frame(name = 'uname')
-            user = user.reset_index().drop(['level_1','level_2'],axis=1)
+            # user = user.str.strip().str.split(r'[,，。]',expand=True).stack() # divide user
+            #user = user.str.strip().str.split(r'[:]',expand=True)# divide character
+            user = user.str.strip().str.split(r'[\/]',expand=True).stack().reset_index(drop=True)  # divide user by slash, old is [,，。]
+            user = user.str.strip().apply(lambda x: re.sub(r'\[.*\]','',x))
+            user = user.rename('uname').to_frame()
+            print("..check.user.....",user)
+            # user = user.str.strip().str.split(r'[、]',expand=True).stack().to_frame(name = 'uname')
+            # user = user.reset_index().drop(['level_1','level_2'],axis=1)
             # agent and address
             agent_adr = df[['aname','address']]
             opt = agent_adr.any()
@@ -53,6 +59,8 @@ def df_transform_stream(df):
                 df_x = sort_data(df_x,number)
             elif opt.address:
                 print_log('>>> 只有【地址】...正在处理...')
+                print("------user--111---",user.columns)
+                print("------user--222---",user)
                 adr = make_adr(adr,fix_aname=user['uname'].tolist())
                 adr['uname'] = adr['clean_aname']
                 adr = merge_user(user,adr)
@@ -104,6 +112,7 @@ def clean_rows_adr(adr):
         adr = '，'.join(list(filter(None, y)))
     return adr
 
+#%%
 def make_adr(adr,fix_aname=[]): #fix_aname = clean_aname
     '''
     clean_aname:合并标识,此处如果没律师，则代理人就是自己
@@ -124,8 +133,7 @@ def make_adr(adr,fix_aname=[]): #fix_aname = clean_aname
 
 def make_agent(agent,fix_aname=[]):
     '''
-    agent = '张三(曾用名张五)/律师张二三_123123_李三四_123123'
-    
+    agent = '张三(曾用名张五)/律师张CC_123123_李DD_123123,李四/律师张AA_123123_李BB_123123'
     fix_aname:修正名字错误,假如律师(aname)有多个,则选择第一个律师作为合并标识(clean_aname)，注意没有律师的合并就是自己(uname)做代理人
     Returns:
        level_0       uname            aname              clean_aname
@@ -134,13 +142,16 @@ def make_agent(agent,fix_aname=[]):
     2       44         王五       B律师_123123、C律师_123123   B律师
     '''
     
-    df = ut.titles_trans_columns(df,titles_cn);df # 中译英方便后面处理
-    agent = df['aname']
+#    df = ut.titles_trans_columns(df,titles_cn);df # 中译英方便后面处理
+#    agent = df['aname']
     agent = agent[agent != '']
-    agent = agent.str.strip().str.split(r'[,，。]',expand=True).stack() #Series
+    print('...111....agent.... ',agent)
+    agent = agent.str.strip().str.split(r'[,，、。]',expand=True).stack() #Series
 #    agent.str.strip().str.split(r'[,，。]',expand=True).stack() 
 #    agent.str.strip().str.split(r'\/',expand=True).fillna('')
     agent = agent.str.strip().str.split(r'\/',expand=True).fillna('') #DataFrame
+    print('...222....agent.... ',agent)
+    
     agent.columns = ['uname','aname']
     agent['clean_aname'] = agent['aname'].str.strip().apply(lambda x: clean_rows_aname(x,fix_aname))
     dd_l = agent['uname'].str.strip().str.split(r'、',expand=True).stack().to_frame(name = 'uname').reset_index()
@@ -155,7 +166,8 @@ def merge_user(user,agent):
     0       44         张三          A律师_123213123                A律师
     2       44         王五       B律师_123123132123、C律师_123123   B律师
     '''
-    return pd.merge(user,agent,how='left',on=['level_0','uname']).fillna('')
+#    return pd.merge(user,agent,how='left',on=['level_0','uname']).fillna('')
+    return pd.merge(user,agent,how='left',on=['uname']).fillna('')
 
 def merge_usr_agent_adr(agent,adr):
     ''' clean_aname 去除nan,保留曾用名'''
@@ -175,9 +187,16 @@ def reclean_data(tb):
     return x
 
 def sort_data(x,number):
-    x = x[['level_0','uname','aname','address']].sort_values(by=['level_0'])
+
+    x = x[['level_0','uname','aname','address']]
+#    .sort_values(by=['level_0'])
+
+    x['level_0'] = x['level_0'].apply(int);
+    number['level_0']=number['level_0'].apply(int);
     x = pd.merge(number,x,how='right',on=['level_0']).drop(['level_0'],axis=1).fillna('')
     return x
+
+#%%
 
 def df_check_format(x):
     '''check data address and agent format with check flag'''

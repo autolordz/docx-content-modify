@@ -18,6 +18,8 @@ pd.set_option('max_columns',50)
 
 titles_main = ['立案日期','适用程序','案号','原一审案号','判决书源号','主审法官','当事人','诉讼代理人','地址',]
 titles_oa = ['立案日期','案号','原一审案号','承办人','当事人','适用程序']
+#titles_oa = ['立案日期','案号','原审案号','承办法官','当事人','适用程序']
+
 titles_cn = ['立案日期','案号','当事人','诉讼代理人','地址']
 titles_en = ['datetime','number','uname','aname','address']
 path_names_clean = re.compile(r'[^A-Za-z\u4e00-\u9fa5（）()：]') # 保留用户名和旧名 包括括号冒号
@@ -72,7 +74,7 @@ if os.path.exists(logname):
 def init_var():
     cfgfile = 'conf.txt'
     try:
-        if not os.path.exists(cfgfile): write_config(cfgfile) # 生成默认配置
+#        if not os.path.exists(cfgfile): write_config(cfgfile) # 生成默认配置
         var = pd.Series(read_config(cfgfile));var
     except Exception as e:
         print_log('>>> 配置文件出错 %s ,删除...'%e)
@@ -88,4 +90,4 @@ def init_var():
     return var
 
 var = init_var()
-locals().update(var.to_dict()) # 设置读取的全局变量
+#locals().update(var.to_dict()) # 设置读取的全局变量

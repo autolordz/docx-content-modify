@@ -9,6 +9,7 @@ import re
 from docx import Document
 import dcm_util as ut
 from dcm_globalvar import *
+locals().update(var.to_dict()) # 设置读取的全局变量
 
 
 #%% print postal sheets 打印邮单流程
@@ -23,6 +24,8 @@ def fill_postal_save(x):
     user_text = '' if uname in agent_text else '代 '+ uname
     number_text = str(x['number'])
     address_text = str(x['address'])
+    
+    print("打印信息...用户【%s】...代理人【%s】...地址【%s】..."%(user_text,agent_text,address_text))
 
     # 以下填充均对于模板sheet.doc，假如模板位置有变，这里需要修改
     try:

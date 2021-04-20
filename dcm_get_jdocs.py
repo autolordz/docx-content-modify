@@ -32,7 +32,7 @@ def get_jdocs_infos(doc,lines = 20):# search at least 20 lines docs
     adrs = {};codes = ''
     try:tables = Document(doc).tables
     except Exception as e:
-        print_log('读取错误 %s ,docx文档问题,请重新另存为,或关闭已打开的docx文档'%e)
+        print_log('读取文件【%s】错误 ,word文档的问题，或格式docx和doc混淆，或文档已打开，或文档损坏'%e)
         return codes,adrs
     if tables: codes = read_jdocs_table(tables)
     paras = Document(doc).paragraphs
@@ -87,12 +87,13 @@ def get_all_jdocs(docs):
     numlist=[]; nadr = []
     for doc in docs:
         codes,adrs = get_jdocs_infos(doc) # 遍历每份文档 找到内容
+#        print('判决书 【%s】-【%s】'%(codes,adrs))
         if codes:
             rename_jdoc_x(doc,codes) # 有号码就重命名
         numlist.append(codes)
         nadr.append(adrs)
-        if flag_check_jdocs and codes:
-            print_log('>>> 判决书信息 【%s】-【%s人】-%s \n'%(codes,len(adrs),adrs))
+        if codes:
+            print_log('>>> 判决书信息 【%s】-【%s人】-【%s】 \n'%(codes,len(adrs),adrs))
     numlist = list(map(case_codes_fix,numlist))
     return pd.DataFrame({'判决书源号':numlist,'new_adr':nadr})
 

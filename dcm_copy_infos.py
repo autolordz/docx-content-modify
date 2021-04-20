@@ -12,6 +12,7 @@ import re
 from collections import Counter
 from dcm_util import split_list,user_to_list,save_adjust_xlsx
 from dcm_globalvar import *
+locals().update(var.to_dict()) # 设置读取的全局变量
 
 #%%
 
@@ -85,20 +86,22 @@ def copy_rows_adr1(x,n_adr):
         同时排除已有代理人的信息
     '''
     user = x['当事人'];agent = x['诉讼代理人'];adr = x['地址']; codes = x['案号']
+    print("---n_adr-----",n_adr)
+
     if not isinstance(n_adr,dict):
         return adr
     else:
         y = split_list(r'[,，]',adr)
         adr1 = y.copy()
-        for i,k in enumerate(n_adr):
+        for i,k in enumerate(n_adr): # k for key name of n_adr
             by_agent = any([k in ag for ag in re.findall(r'[\w+、]*\/[\w+]*',agent)]) # 找到代理人格式 'XX、XX/XX_123123'
-            if by_agent and k in adr: # remove user's address when user with agent 用户有代理人就不要地址
-                y = list(filter(lambda x:not k in x,y))
+#            if by_agent and k in adr: # remove user's address when user with agent 用户有代理人就不要地址
+#                y = list(filter(lambda x:not k in x,y))
             if type(n_adr) == dict and not k in adr and k in user and not by_agent:
                 y += [k+adr_tag+n_adr.get(k)] # append address by rules 输出地址格式
         adr2 = y.copy()
         adr =  '，'.join(list(filter(None, y)))
-        if Counter(adr1) != Counter(adr2) and adr and flag_check_jdocs:
+        if Counter(adr1) != Counter(adr2) and adr:
             print_log('>>> 【%s】成功复制判决书地址=>【%s】'%(codes,adr))
     return adr
 
@@ -108,11 +111,10 @@ def copy_rows_user_func(dfj,dfo):
     根据地址用户，复制每行用户信息
     '''
     errs = ['【OA无用户记录】','【用户错别字】','【字段重复】','【系列案】']
-
     dfo['判决书源号'] = ''
 
     def find_source():
-        print_log('\n>>> 判决书信息 | 案号=%s | 源号=%s | 判决书源号=%s'%(code0,code1,jcode))
+        print_log('\n>>> 案号信息 | 案号=%s | 源号=%s | 判决书源号=%s'%(code0,code1,jcode))
         dfo.loc[i,'地址'] = copy_rows_adr1(dfor,n_adr)
         dfo.loc[i,'判决书源号'] = jcode
 
