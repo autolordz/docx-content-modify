@@ -1,0 +1,14 @@
+certifi @ file:///C:/Windows/TEMP/abs_e9b7158a-aa56-4a5b-87b6-c00d295b01fanefpc8_o/croots/recipe/certifi_1655968940823/work/certifi
+et-xmlfile==1.1.0
+lxml==4.9.1
+numpy==1.23.1
+openpyxl==3.0.10
+pandas==1.4.3
+pyasn1==0.4.8
+python-dateutil==2.8.2
+python-docx==0.8.11
+pytz==2022.1
+pywin32==225
+rsa==4.8
+six==1.16.0
+wincertstore==0.2
